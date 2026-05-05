@@ -5,6 +5,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
+const PORTAL_ACCESS_TOKEN = process.env.PORTAL_ACCESS_TOKEN || "";
+
 interface Props {
   params: Promise<{ id: string }>;
 }
@@ -39,6 +41,12 @@ export default async function AppPage({ params }: Props) {
     );
   }
 
+  // Append portal token to iframe URL for access gate
+  const separator = app.url.includes("?") ? "&" : "?";
+  const iframeSrc = PORTAL_ACCESS_TOKEN
+    ? `${app.url}${separator}portal_token=${PORTAL_ACCESS_TOKEN}`
+    : app.url;
+
   return (
     <div className="-m-6 flex flex-1 flex-col">
       <div className="flex items-center justify-between border-b border-fs-warm-gray bg-white px-6 py-3">
@@ -66,7 +74,7 @@ export default async function AppPage({ params }: Props) {
         </a>
       </div>
       <iframe
-        src={app.url}
+        src={iframeSrc}
         className="h-0 min-h-0 flex-1 border-0"
         title={app.name}
         allow="clipboard-read; clipboard-write"
