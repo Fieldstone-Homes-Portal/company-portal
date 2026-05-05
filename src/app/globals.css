@@ -1,11 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --fs-espresso: #21170f;
-  --fs-copper: #9f744b;
+  --fs-espresso: #26221F;
+  --fs-copper: #A77243;
   --fs-copper-light: #b8926f;
-  --fs-warm-white: #f3f2f0;
-  --fs-warm-gray: #e6e3df;
+  --fs-sand: #DCD2C7;
+  --fs-warm-white: #f5f3f0;
+  --fs-warm-gray: #CBCBC5;
+  --fs-sage: #B1B0A9;
+  --fs-charcoal: #323232;
   --fs-cool-gray: #ecedf0;
   --fs-white: #ffffff;
   --fs-black: #000000;
@@ -33,16 +36,19 @@
   --color-fs-espresso: var(--fs-espresso);
   --color-fs-copper: var(--fs-copper);
   --color-fs-copper-light: var(--fs-copper-light);
+  --color-fs-sand: var(--fs-sand);
   --color-fs-warm-white: var(--fs-warm-white);
   --color-fs-warm-gray: var(--fs-warm-gray);
+  --color-fs-sage: var(--fs-sage);
+  --color-fs-charcoal: var(--fs-charcoal);
   --color-fs-cool-gray: var(--fs-cool-gray);
 
   --color-success: #2d6a4f;
   --color-warning: #b45309;
   --color-danger: #991b1b;
 
-  --font-sans: "Open Sans", system-ui, sans-serif;
-  --font-display: "Lato", "Open Sans", system-ui, sans-serif;
+  --font-sans: "Montserrat", system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
 }
 
 body {

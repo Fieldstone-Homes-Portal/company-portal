@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+/* eslint-disable @next/next/no-img-element */
 import SignInButton from "./SignInButton";
 
 export default async function LoginPage() {
@@ -7,42 +8,87 @@ export default async function LoginPage() {
   if (session) redirect("/dashboard");
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-fs-warm-white">
-      <div className="w-full max-w-md space-y-8 px-6">
-        <div className="text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-fs-espresso">
-            <svg
-              className="h-8 w-8 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-              />
-            </svg>
+    <div className="flex min-h-full">
+      {/* Left branded panel */}
+      <div className="hidden lg:flex lg:w-1/2 lg:flex-col lg:justify-between bg-gradient-to-br from-fs-espresso via-fs-charcoal to-fs-espresso p-12 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.03]">
+          <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="loginGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#loginGrid)" />
+          </svg>
+        </div>
+        <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-fs-copper/10 blur-3xl" />
+        <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-fs-copper/5 blur-3xl" />
+
+        {/* Logo */}
+        <div className="relative">
+          <img
+            src="/fieldstone-logo.png"
+            alt="Fieldstone Homes"
+            className="h-10 w-auto brightness-0 invert"
+          />
+        </div>
+
+        {/* Center content */}
+        <div className="relative">
+          <div className="mb-6 h-px w-16 bg-gradient-to-r from-fs-copper to-transparent" />
+          <h2 className="font-display text-4xl font-bold leading-tight text-white">
+            Employee<br />Portal
+          </h2>
+          <p className="mt-4 max-w-sm text-sm font-light leading-relaxed text-fs-sand">
+            Access your internal tools, resources, and company applications — all in one place.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="relative">
+          <p className="text-xs tracking-wide text-fs-sage">
+            &copy; {new Date().getFullYear()} Fieldstone Homes. Internal use only.
+          </p>
+        </div>
+      </div>
+
+      {/* Right sign-in panel */}
+      <div className="flex flex-1 items-center justify-center bg-fs-warm-white px-6">
+        <div className="w-full max-w-sm space-y-8">
+          {/* Mobile logo (hidden on desktop) */}
+          <div className="text-center lg:hidden">
+            <img
+              src="/fieldstone-logo.png"
+              alt="Fieldstone Homes"
+              className="mx-auto h-10 w-auto"
+            />
+            <p className="mt-3 text-sm text-fs-copper">Employee Portal</p>
           </div>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-fs-espresso">
-            Fieldstone Portal
-          </h1>
-          <p className="mt-2 text-sm text-fs-copper">
-            Internal tools and resources for Fieldstone Homes
-          </p>
-        </div>
 
-        <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-fs-warm-gray">
-          <SignInButton />
-          <p className="mt-4 text-center text-xs text-fs-copper-light">
-            Use your @fieldstonehomes.com account to continue
-          </p>
-        </div>
+          {/* Sign in heading */}
+          <div className="text-center lg:text-left">
+            <h1 className="font-display text-3xl font-bold text-fs-espresso">
+              Sign in
+            </h1>
+            <p className="mt-2 text-sm text-fs-sage">
+              Use your company Microsoft account to continue
+            </p>
+          </div>
 
-        <p className="text-center text-xs text-fs-copper-light/60">
-          Fieldstone Homes &copy; {new Date().getFullYear()}
-        </p>
+          {/* Sign in card */}
+          <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-fs-warm-gray">
+            <SignInButton />
+            <div className="mt-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-fs-warm-gray" />
+              <span className="text-[10px] uppercase tracking-widest text-fs-sage">secured by</span>
+              <div className="h-px flex-1 bg-fs-warm-gray" />
+            </div>
+            <p className="mt-3 text-center text-xs text-fs-sage">
+              Microsoft Entra ID &middot; @fieldstonehomes.com
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
