@@ -56,29 +56,32 @@ export default function Sidebar({ role }: SidebarProps) {
       <div className="absolute right-0 top-0 h-full w-px bg-gradient-to-b from-fs-copper via-fs-copper/40 to-transparent" />
 
       {/* Logo area */}
-      <div className="relative flex h-16 items-center justify-between border-b border-white/10 px-4">
-        {!collapsed && (
-          <Link href="/dashboard" className="flex items-center">
-            <img
-              src="/fieldstone-logo.png"
-              alt="Fieldstone Homes"
-              className="h-8 w-auto brightness-0 invert"
-            />
-          </Link>
+      <div className="relative flex h-16 items-center border-b border-white/10 px-4">
+        {!collapsed ? (
+          <>
+            <Link href="/dashboard" className="flex flex-1 items-center">
+              <img
+                src="/fieldstone-logo.png"
+                alt="Fieldstone Homes"
+                className="h-8 w-auto"
+                style={{ filter: "invert(1)" }}
+              />
+            </Link>
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="ml-2 rounded-lg p-1.5 text-fs-sand/60 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <ChevronLeft size={16} />
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="mx-auto rounded-lg p-1.5 text-fs-sand/60 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <ChevronRight size={16} />
+          </button>
         )}
-        {collapsed && (
-          <Link href="/dashboard" className="mx-auto">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
-              <span className="text-sm font-bold text-white">F</span>
-            </div>
-          </Link>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="rounded-lg p-1.5 text-fs-sand/60 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
       </div>
 
       {/* Navigation */}
