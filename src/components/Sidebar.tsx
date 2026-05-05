@@ -61,10 +61,9 @@ export default function Sidebar({ role }: SidebarProps) {
           <>
             <Link href="/dashboard" className="flex flex-1 items-center">
               <img
-                src="/fieldstone-logo.png"
+                src="/fieldstone-logo-white.png"
                 alt="Fieldstone Homes"
                 className="h-8 w-auto"
-                style={{ filter: "invert(1)" }}
               />
             </Link>
             <button

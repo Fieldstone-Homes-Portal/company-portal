@@ -28,10 +28,9 @@ export default async function LoginPage() {
         {/* Logo */}
         <div className="relative">
           <img
-            src="/fieldstone-logo.png"
+            src="/fieldstone-logo-white.png"
             alt="Fieldstone Homes"
             className="h-10 w-auto"
-            style={{ filter: "invert(1)" }}
           />
         </div>
 
