@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { hasMinRole } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import AppEmbed from "./AppEmbed";
 
 const PORTAL_ACCESS_TOKEN = process.env.PORTAL_ACCESS_TOKEN || "";
 
@@ -47,38 +48,5 @@ export default async function AppPage({ params }: Props) {
     ? `${app.url}${separator}portal_token=${PORTAL_ACCESS_TOKEN}`
     : app.url;
 
-  return (
-    <div className="-m-6 flex flex-1 flex-col">
-      <div className="flex items-center justify-between border-b border-fs-warm-gray bg-white px-6 py-3">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-fs-copper transition-colors hover:bg-fs-warm-gray hover:text-fs-espresso"
-          >
-            <ArrowLeft size={14} />
-            Back
-          </Link>
-          <div className="h-4 w-px bg-fs-warm-gray" />
-          <h1 className="font-display text-sm font-bold text-fs-espresso">
-            {app.name}
-          </h1>
-        </div>
-        <a
-          href={app.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-fs-copper transition-colors hover:bg-fs-warm-gray hover:text-fs-espresso"
-        >
-          Open in new tab
-          <ExternalLink size={12} />
-        </a>
-      </div>
-      <iframe
-        src={iframeSrc}
-        className="h-0 min-h-0 flex-1 border-0"
-        title={app.name}
-        allow="clipboard-read; clipboard-write"
-      />
-    </div>
-  );
+  return <AppEmbed name={app.name} iframeSrc={iframeSrc} />;
 }
