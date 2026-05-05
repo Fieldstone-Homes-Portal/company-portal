@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { hasMinRole } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import UserManager from "./UserManager";
+import PageHeader from "@/components/PageHeader";
 
 export default async function AdminUsersPage() {
   const session = await auth();
@@ -23,14 +24,11 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-8">
-        <h1 className="font-display text-2xl font-bold text-fs-espresso">
-          Manage Users
-        </h1>
-        <p className="mt-1 text-sm text-fs-copper">
-          View portal users and assign roles
-        </p>
-      </div>
+      <PageHeader
+        label="Management"
+        title="Manage Users"
+        subtitle="View portal users and assign roles"
+      />
       <UserManager initialUsers={users} currentUserId={session.user.id} />
     </div>
   );

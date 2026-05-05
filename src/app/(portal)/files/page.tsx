@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { hasMinRole } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { FileText, Download, FolderOpen } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 
 export default async function FilesPage() {
   const session = await auth();
@@ -20,14 +21,11 @@ export default async function FilesPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-8">
-        <h1 className="font-display text-2xl font-bold text-fs-espresso">
-          Files & Documents
-        </h1>
-        <p className="mt-1 text-sm text-fs-copper">
-          Access shared files and resources
-        </p>
-      </div>
+      <PageHeader
+        label="Resources"
+        title="Files & Documents"
+        subtitle="Access shared files and resources"
+      />
 
       {visibleFiles.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center shadow-sm ring-1 ring-fs-warm-gray">
