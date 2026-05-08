@@ -23,7 +23,9 @@ export default async function DashboardPage() {
     ...new Set(visibleApps.map((app) => app.category)),
   ];
 
-  const hour = new Date().getHours();
+  const hour = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "America/Denver" })
+  ).getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const firstName = session.user.name?.split(" ")[0] || "there";
