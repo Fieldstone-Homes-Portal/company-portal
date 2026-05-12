@@ -11,6 +11,7 @@ import {
   AppWindow,
   ChevronLeft,
   ChevronRight,
+  Home,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -20,6 +21,7 @@ interface SidebarProps {
 
 const employeeNav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Plan Intelligence", href: "/plans", icon: Home },
   { label: "Links", href: "/links", icon: Link2 },
 ];
 
