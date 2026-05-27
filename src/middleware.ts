@@ -23,5 +23,11 @@ export default function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo).*)"],
+  // Skip middleware for Next internals, the favicon, and any static asset
+  // file from /public (anything with an image/font extension). Without the
+  // extension carve-out, requests like /fieldstone-logo-white.png from the
+  // login page get redirected to /login and render as broken images.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|otf)$).*)",
+  ],
 };
