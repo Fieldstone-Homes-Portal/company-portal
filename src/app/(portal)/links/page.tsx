@@ -47,6 +47,13 @@ const companyLinks = [
     category: "Sales & Marketing",
   },
   {
+    name: "Novi Home",
+    description: "Home builder sales platform",
+    url: "https://login.novihome.com",
+    icon: "🏘️",
+    category: "Sales & Marketing",
+  },
+  {
     name: "Domo",
     description: "Business intelligence and data analytics",
     url: "https://fieldstonehomes.domo.com/home",
