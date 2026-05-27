@@ -11,6 +11,7 @@ import {
   AppWindow,
   ChevronLeft,
   ChevronRight,
+  Boxes,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -19,7 +20,10 @@ interface SidebarProps {
 }
 
 const employeeNav = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  // "Toolbox" is the old "Dashboard" page — the grid of apps. Renamed
+  // to free up the "Dashboard" name for actual data dashboards.
+  { label: "Toolbox", href: "/dashboard", icon: Boxes },
+  { label: "Dashboards", href: "/dashboards", icon: LayoutDashboard },
   { label: "Links", href: "/links", icon: Link2 },
 ];
 
