@@ -139,11 +139,17 @@ export default function Sidebar({ role }: SidebarProps) {
         )}
       </nav>
 
-      {/* Footer branding */}
+      {/* Footer branding — Cornerstone tag with subtle icon */}
       {!collapsed && (
-        <div className="relative border-t border-white/10 px-4 py-3">
-          <p className="text-[10px] font-medium tracking-[0.2em] text-fs-copper">
-            EMPLOYEE PORTAL
+        <div className="relative flex items-center gap-2 border-t border-white/10 px-4 py-3">
+          <img
+            src="/cornerstone-icon-light.svg"
+            alt=""
+            aria-hidden="true"
+            className="h-5 w-auto opacity-80"
+          />
+          <p className="text-[10px] font-semibold tracking-[0.2em] text-fs-copper">
+            CORNERSTONE
           </p>
         </div>
       )}

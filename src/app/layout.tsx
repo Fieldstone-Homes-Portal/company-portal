@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Fieldstone Portal",
-  description: "Fieldstone Homes internal tools and resources",
+  title: "Cornerstone | Fieldstone Homes",
+  description: "Cornerstone — Fieldstone Homes internal tools and resources",
 };
 
 export default function RootLayout({

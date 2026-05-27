@@ -34,14 +34,24 @@ export default async function LoginPage() {
           />
         </div>
 
-        {/* Center content */}
+        {/* Center content — Cornerstone identity (sub-brand of Fieldstone Homes) */}
         <div className="relative">
+          <img
+            src="/cornerstone-icon-light.svg"
+            alt=""
+            aria-hidden="true"
+            className="mb-5 h-20 w-auto"
+          />
           <div className="mb-6 h-px w-16 bg-gradient-to-r from-fs-copper to-transparent" />
-          <h2 className="font-display text-4xl font-bold leading-tight text-white">
-            Employee<br />Portal
+          <h2 className="font-display text-5xl font-bold leading-tight tracking-tight text-white">
+            Cornerstone
           </h2>
-          <p className="mt-4 max-w-sm text-sm font-light leading-relaxed text-fs-sand">
-            Access your internal tools, resources, and company applications — all in one place.
+          <p className="mt-2 text-xs font-medium uppercase tracking-[0.25em] text-fs-copper">
+            By Fieldstone Homes
+          </p>
+          <p className="mt-5 max-w-sm text-sm font-light leading-relaxed text-fs-sand">
+            Your foundation for internal tools, resources, and company
+            applications — all in one place.
           </p>
         </div>
 

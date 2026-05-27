@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 156 144" width="156" height="144">
+  <g transform="translate(8, 12)">
+    <!-- Roof -->
+    <polygon points="8,56 70,10 132,56" fill="#DCD2C7"/>
+    <!-- Chimney -->
+    <rect x="102" y="26" width="11" height="18" fill="#DCD2C7"/>
+    <!-- House body -->
+    <rect x="16" y="56" width="108" height="60" fill="#DCD2C7"/>
+    <!-- Faint stone-course lines -->
+    <line x1="16" y1="75" x2="124" y2="75" stroke="#26221F" stroke-width="0.8" opacity="0.22"/>
+    <line x1="16" y1="95" x2="124" y2="95" stroke="#26221F" stroke-width="0.8" opacity="0.22"/>
+    <!-- The gold cornerstone -->
+    <polygon points="16,95 40,95 40,116 16,116" fill="#A77243"/>
+    <polygon points="16,95 40,95 40,98 19,98" fill="#FFFFFF" opacity="0.32"/>
+    <polygon points="16,95 19,98 19,113 16,116" fill="#FFFFFF" opacity="0.22"/>
+    <polygon points="37,98 40,95 40,116 37,113" fill="#26221F" opacity="0.2"/>
+    <polygon points="16,116 40,116 37,113 19,113" fill="#26221F" opacity="0.27"/>
+    <!-- Engraved C -->
+    <text x="28" y="110" text-anchor="middle"
+          font-family="'Cormorant Garamond', Georgia, serif"
+          font-size="18" font-weight="700"
+          fill="#26221F" opacity="0.8">C</text>
+    <!-- Ground line in gold -->
+    <line x1="0" y1="116" x2="140" y2="116" stroke="#A77243" stroke-width="1.4" opacity="0.65"/>
+  </g>
+</svg>
