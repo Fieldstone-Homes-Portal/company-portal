@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2, X, Check, Power, PowerOff } from "lucide-react";
 import { useRouter } from "next/navigation";
+import DepartmentMultiSelect from "@/components/DepartmentMultiSelect";
+
+interface Department {
+  id: string;
+  name: string;
+}
 
 interface App {
   id: string;
@@ -16,6 +22,7 @@ interface App {
   sortOrder: number;
   isActive: boolean;
   openIn: string;
+  departments?: Department[];
 }
 
 const ICONS = [
@@ -36,14 +43,20 @@ const SECTIONS = [
   { value: "dashboard", label: "Dashboards" },
 ];
 
-export default function AppManager({ initialApps }: { initialApps: App[] }) {
+export default function AppManager({
+  initialApps,
+  allDepartments,
+}: {
+  initialApps: App[];
+  allDepartments: Department[];
+}) {
   const [apps, setApps] = useState(initialApps);
   const [editing, setEditing] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
-  const [form, setForm] = useState({
+  const blankForm = {
     name: "",
     description: "",
     icon: "tool",
@@ -53,20 +66,12 @@ export default function AppManager({ initialApps }: { initialApps: App[] }) {
     section: "tool",
     sortOrder: 0,
     openIn: "iframe",
-  });
+    departmentIds: [] as string[],
+  };
+  const [form, setForm] = useState(blankForm);
 
   function resetForm() {
-    setForm({
-      name: "",
-      description: "",
-      icon: "tool",
-      url: "",
-      minRole: "EMPLOYEE",
-      category: "general",
-      section: "tool",
-      sortOrder: 0,
-      openIn: "iframe",
-    });
+    setForm(blankForm);
     setEditing(null);
     setShowForm(false);
   }
@@ -82,6 +87,7 @@ export default function AppManager({ initialApps }: { initialApps: App[] }) {
       section: app.section || "tool",
       sortOrder: app.sortOrder,
       openIn: app.openIn,
+      departmentIds: (app.departments || []).map((d) => d.id),
     });
     setEditing(app.id);
     setShowForm(true);
@@ -286,6 +292,21 @@ export default function AppManager({ initialApps }: { initialApps: App[] }) {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-fs-copper">
+                Department restriction <span className="text-fs-copper-light">— leave empty for no restriction</span>
+              </label>
+              <DepartmentMultiSelect
+                allDepartments={allDepartments}
+                selectedIds={form.departmentIds}
+                onChange={(ids) => setForm({ ...form, departmentIds: ids })}
+                emptyLabel="No restriction — any employee meeting the role gate can access."
+                placeholder="Select departments…"
+              />
+              <p className="mt-1.5 text-xs text-fs-copper-light">
+                Employees need at least one matching department. Managers and admins bypass.
+              </p>
             </div>
           </div>
 

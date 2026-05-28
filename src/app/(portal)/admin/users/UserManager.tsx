@@ -3,13 +3,20 @@
 import { useState } from "react";
 import { Shield, ShieldCheck, User } from "lucide-react";
 import { useRouter } from "next/navigation";
+import DepartmentMultiSelect from "@/components/DepartmentMultiSelect";
+
+interface Department {
+  id: string;
+  name: string;
+}
 
 interface PortalUser {
   id: string;
   name: string | null;
   email: string;
   role: string;
-  department: string | null;
+  department: string | null; // legacy single text field (preserved)
+  departments: Department[];
   createdAt: string | Date;
 }
 
@@ -21,9 +28,11 @@ const ROLE_ICONS: Record<string, typeof User> = {
 
 export default function UserManager({
   initialUsers,
+  allDepartments,
   currentUserId,
 }: {
   initialUsers: PortalUser[];
+  allDepartments: Department[];
   currentUserId: string;
 }) {
   const [users, setUsers] = useState(initialUsers);
@@ -45,11 +54,20 @@ export default function UserManager({
     setSaving(null);
   }
 
-  async function updateDepartment(userId: string, department: string) {
+  async function updateDepartments(userId: string, departmentIds: string[]) {
+    // Optimistic update so the multi-select chips feel snappy
+    const optimisticDepts = allDepartments.filter((d) =>
+      departmentIds.includes(d.id),
+    );
+    setUsers(
+      users.map((u) =>
+        u.id === userId ? { ...u, departments: optimisticDepts } : u,
+      ),
+    );
     const res = await fetch(`/api/users/${userId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ department: department || null }),
+      body: JSON.stringify({ departmentIds }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -59,65 +77,79 @@ export default function UserManager({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl bg-white px-5 py-3 text-xs font-semibold text-fs-copper shadow-sm ring-1 ring-fs-warm-gray">
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-4">User</div>
-          <div className="col-span-3">Department</div>
-          <div className="col-span-3">Role</div>
-          <div className="col-span-2">Joined</div>
-        </div>
-      </div>
-
       {users.map((user) => {
         const Icon = ROLE_ICONS[user.role] || User;
         const isCurrentUser = user.id === currentUserId;
+        const selectedIds = user.departments.map((d) => d.id);
 
         return (
           <div
             key={user.id}
-            className="rounded-xl bg-white px-5 py-4 shadow-sm ring-1 ring-fs-warm-gray"
+            className="rounded-2xl bg-white px-5 py-5 shadow-sm ring-1 ring-fs-warm-gray"
           >
-            <div className="grid grid-cols-12 items-center gap-4">
-              <div className="col-span-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-fs-warm-white text-fs-copper">
-                    <Icon size={16} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-fs-espresso">
-                      {user.name || "—"}
-                      {isCurrentUser && (
-                        <span className="ml-1.5 text-xs text-fs-copper">
-                          (you)
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-fs-copper">{user.email}</p>
-                  </div>
+            <div className="grid gap-4 lg:grid-cols-[1.4fr_2fr_1fr_0.7fr] lg:items-start">
+              {/* Identity */}
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-fs-warm-white text-fs-copper">
+                  <Icon size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-fs-espresso">
+                    {user.name || "—"}
+                    {isCurrentUser && (
+                      <span className="ml-1.5 text-xs text-fs-copper">
+                        (you)
+                      </span>
+                    )}
+                  </p>
+                  <p className="truncate text-xs text-fs-copper">{user.email}</p>
                 </div>
               </div>
-              <div className="col-span-3">
-                <input
-                  defaultValue={user.department || ""}
-                  onBlur={(e) => updateDepartment(user.id, e.target.value)}
-                  placeholder="Set department..."
-                  className="w-full rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm text-fs-espresso placeholder:text-fs-copper-light/50 hover:border-fs-warm-gray focus:border-fs-copper focus:outline-none"
+
+              {/* Departments multi-select */}
+              <div>
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-fs-copper-light">
+                  Departments
+                </label>
+                <DepartmentMultiSelect
+                  allDepartments={allDepartments}
+                  selectedIds={selectedIds}
+                  onChange={(ids) => updateDepartments(user.id, ids)}
+                  emptyLabel="No departments — can't access dept-restricted apps."
+                  placeholder="Assign departments…"
                 />
               </div>
-              <div className="col-span-3">
+
+              {/* Role */}
+              <div>
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-fs-copper-light">
+                  Role
+                </label>
                 <select
                   value={user.role}
                   onChange={(e) => updateRole(user.id, e.target.value)}
                   disabled={isCurrentUser || saving === user.id}
-                  className="w-full rounded-lg border border-fs-warm-gray bg-fs-warm-white px-3 py-1.5 text-sm text-fs-espresso focus:border-fs-copper focus:outline-none disabled:opacity-50"
+                  className="w-full rounded-xl border border-fs-warm-gray bg-fs-warm-white px-3 py-2 text-sm text-fs-espresso focus:border-fs-copper focus:outline-none disabled:opacity-50"
+                  title={
+                    isCurrentUser
+                      ? "You can't change your own role."
+                      : undefined
+                  }
                 >
                   <option value="EMPLOYEE">Employee</option>
                   <option value="MANAGER">Manager</option>
                   <option value="ADMIN">Admin</option>
                 </select>
               </div>
-              <div className="col-span-2 text-xs text-fs-copper">
-                {new Date(user.createdAt).toLocaleDateString()}
+
+              {/* Joined date */}
+              <div>
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-fs-copper-light">
+                  Joined
+                </label>
+                <p className="text-sm text-fs-copper">
+                  {new Date(user.createdAt).toLocaleDateString()}
+                </p>
               </div>
             </div>
           </div>
@@ -133,9 +165,10 @@ export default function UserManager({
       <div className="rounded-xl bg-fs-warm-white p-4 text-xs text-fs-copper">
         <p>
           <strong>Note:</strong> Users appear here after their first sign-in via
-          Microsoft SSO. You cannot add users manually — they must authenticate
-          with their @fieldstonehomes.com account first, then you can assign
-          their role.
+          Microsoft SSO. You can&apos;t add users manually — they must
+          authenticate with their @fieldstonehomes.com account first, then you
+          can assign their role and departments. Department changes save as you
+          edit; role changes save when you pick a new value.
         </p>
       </div>
     </div>

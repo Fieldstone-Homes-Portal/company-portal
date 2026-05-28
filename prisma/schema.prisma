@@ -20,9 +20,15 @@ model User {
   emailVerified DateTime?
   image         String?
   role          Role      @default(EMPLOYEE)
+  // Legacy single-department field — kept for backward compat during the
+  // transition. New code reads `departments` (many-to-many) instead.
   department    String?
   accounts      Account[]
   sessions      Session[]
+  // Many-to-many: a user can belong to multiple departments.
+  // Used by access-gating: EMPLOYEEs need to be in at least one of an
+  // app's restricted departments to access it. MANAGERs and ADMINs bypass.
+  departments   Department[] @relation("UserDepartments")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -78,8 +84,26 @@ model PortalApp {
   sortOrder   Int      @default(0)
   isActive    Boolean  @default(true)
   openIn      String   @default("iframe")
+  // Many-to-many: an app can be restricted to specific departments.
+  //   Empty list  → no department restriction (anyone with the right role)
+  //   Non-empty   → EMPLOYEEs need to be in at least one of these depts
+  //                 (MANAGERs and ADMINs bypass — see lib/roles.ts)
+  departments Department[] @relation("AppDepartments")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Department: a unit of the company (Construction, Sales, Land, etc.).
+// Managed in the UI under /admin/departments. Used to restrict app access
+// for employees — managers and admins ignore department gates.
+model Department {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String?
+  users       User[]      @relation("UserDepartments")
+  apps        PortalApp[] @relation("AppDepartments")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model PortalFile {

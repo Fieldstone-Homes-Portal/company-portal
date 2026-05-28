@@ -10,6 +10,10 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
+  const departmentIds: string[] = Array.isArray(body.departmentIds)
+    ? body.departmentIds
+    : [];
+
   const app = await prisma.portalApp.create({
     data: {
       name: body.name,
@@ -21,7 +25,11 @@ export async function POST(req: NextRequest) {
       section: body.section || "tool",
       sortOrder: body.sortOrder || 0,
       openIn: body.openIn || "iframe",
+      departments: departmentIds.length
+        ? { connect: departmentIds.map((id) => ({ id })) }
+        : undefined,
     },
+    include: { departments: { select: { id: true, name: true } } },
   });
 
   return NextResponse.json(app);

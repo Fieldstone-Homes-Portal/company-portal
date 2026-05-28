@@ -15,9 +15,27 @@ export async function PUT(req: NextRequest, context: Context) {
 
   const { id } = await context.params;
   const body = await req.json();
+
+  // Pull departmentIds out before spreading the rest. The relation needs a
+  // different Prisma write shape ({ set: [...] }) than scalar fields.
+  const { departmentIds, ...scalarUpdates } = body as Record<string, unknown>;
+  // Strip out fields that aren't valid Prisma columns (defensive against
+  // stray client-side fields like `departments` arriving via PUT).
+  delete (scalarUpdates as Record<string, unknown>).departments;
+
   const app = await prisma.portalApp.update({
     where: { id },
-    data: body,
+    data: {
+      ...scalarUpdates,
+      ...(Array.isArray(departmentIds)
+        ? {
+            departments: {
+              set: (departmentIds as string[]).map((did) => ({ id: did })),
+            },
+          }
+        : {}),
+    },
+    include: { departments: { select: { id: true, name: true } } },
   });
 
   return NextResponse.json(app);

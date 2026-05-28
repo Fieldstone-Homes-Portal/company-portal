@@ -32,6 +32,9 @@ interface AppTileProps {
   url: string;
   category: string;
   openIn: string;
+  // When non-empty, the app is restricted to these departments —
+  // a subtle "Restricted: X, Y" badge appears at the bottom of the tile.
+  departments?: { id: string; name: string }[];
 }
 
 export default function AppTile({
@@ -41,10 +44,10 @@ export default function AppTile({
   icon,
   category,
   openIn,
+  departments = [],
 }: AppTileProps) {
   const Icon = ICON_MAP[icon || "tool"] || Wrench;
-
-  const href = openIn === "external" ? undefined : `/apps/${id}`;
+  const restricted = departments.length > 0;
 
   const content = (
     <div className="group flex flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-fs-warm-gray transition-all hover:shadow-md hover:ring-fs-copper/30">
@@ -64,10 +67,20 @@ export default function AppTile({
           {description}
         </p>
       )}
-      <div className="mt-auto pt-4">
+      <div className="mt-auto flex items-end justify-between gap-3 pt-4">
         <span className="inline-flex items-center text-xs font-semibold text-fs-copper group-hover:text-fs-espresso">
           Open app &rarr;
         </span>
+        {restricted && (
+          <span
+            title={`Restricted to: ${departments.map((d) => d.name).join(", ")}`}
+            className="rounded-full bg-fs-espresso/5 px-2 py-0.5 text-[10px] font-medium text-fs-espresso/70 ring-1 ring-fs-espresso/10"
+          >
+            {departments.length === 1
+              ? departments[0].name
+              : `${departments.length} departments`}
+          </span>
+        )}
       </div>
     </div>
   );

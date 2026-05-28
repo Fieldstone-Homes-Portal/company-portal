@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Boxes,
+  Building2,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -27,16 +28,24 @@ const employeeNav = [
   { label: "Links", href: "/links", icon: Link2 },
 ];
 
+// Manager-level admin links — visible to MANAGERs and ADMINs.
 const managerNav = [
   { label: "Manage Apps", href: "/admin/apps", icon: AppWindow },
   { label: "Manage Users", href: "/admin/users", icon: Users },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
+// Admin-only links — visible to ADMINs only. Departments live here
+// because they affect access for everyone in the org.
+const adminNav = [
+  { label: "Departments", href: "/admin/departments", icon: Building2 },
+];
+
 export default function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const isManager = role === "MANAGER" || role === "ADMIN";
+  const isAdmin = role === "ADMIN";
 
   return (
     <aside
@@ -122,6 +131,24 @@ export default function Sidebar({ role }: SidebarProps) {
             )}
             {collapsed && <div className="my-4 border-t border-white/10" />}
             {managerNav.map((item) => {
+              const active = pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-white/15 text-white shadow-sm"
+                      : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
+                  } ${collapsed ? "justify-center" : ""}`}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <item.icon size={18} />
+                  {!collapsed && item.label}
+                </Link>
+              );
+            })}
+            {isAdmin && adminNav.map((item) => {
               const active = pathname.startsWith(item.href);
               return (
                 <Link

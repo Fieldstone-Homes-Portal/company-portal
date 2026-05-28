@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasMinRole } from "@/lib/roles";
+import { canAccessApp } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { BarChart3 } from "lucide-react";
 import AppTile from "@/components/AppTile";
@@ -10,15 +10,16 @@ export default async function DashboardsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  // Dashboards page only shows apps in the "dashboard" section. Apps
-  // marked as "tool" appear in /dashboard (the Toolbox) instead.
+  // Dashboards page only shows apps in the "dashboard" section.
+  // Include departments so canAccessApp() can apply the dept gate.
   const apps = await prisma.portalApp.findMany({
     where: { isActive: true, section: "dashboard" },
+    include: { departments: { select: { id: true, name: true } } },
     orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
   });
 
   const visibleApps = apps.filter((app) =>
-    hasMinRole(session.user.role, app.minRole)
+    canAccessApp(session.user, app),
   );
 
   const categories = [...new Set(visibleApps.map((app) => app.category))];
@@ -68,6 +69,7 @@ export default async function DashboardsPage() {
                       url={app.url}
                       category={app.category}
                       openIn={app.openIn}
+                      departments={app.departments}
                     />
                   ))}
               </div>

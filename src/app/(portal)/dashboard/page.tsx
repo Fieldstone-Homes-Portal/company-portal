@@ -1,24 +1,25 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasMinRole } from "@/lib/roles";
+import { canAccessApp } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import AppTile from "@/components/AppTile";
 import PageHeader from "@/components/PageHeader";
-import type { Role } from "@prisma/client";
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
   // Toolbox only shows apps in the "tool" section. Apps marked as
-  // "dashboard" appear in /dashboards instead.
+  // "dashboard" appear in /dashboards instead. Include departments so
+  // we can filter by both role AND department membership below.
   const apps = await prisma.portalApp.findMany({
     where: { isActive: true, section: "tool" },
+    include: { departments: { select: { id: true, name: true } } },
     orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
   });
 
   const visibleApps = apps.filter((app) =>
-    hasMinRole(session.user.role, app.minRole)
+    canAccessApp(session.user, app),
   );
 
   const categories = [
@@ -84,6 +85,7 @@ export default async function DashboardPage() {
                       url={app.url}
                       category={app.category}
                       openIn={app.openIn}
+                      departments={app.departments}
                     />
                   ))}
               </div>

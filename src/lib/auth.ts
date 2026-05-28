@@ -13,6 +13,9 @@ declare module "next-auth" {
       image: string | null;
       role: Role;
       department: string | null;
+      // Departments the user belongs to. Drives access gating —
+      // EMPLOYEEs need at least one matching dept to access a restricted app.
+      departments: { id: string; name: string }[];
     };
   }
 
@@ -45,6 +48,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = user.id;
         session.user.role = user.role;
         session.user.department = user.department;
+        // Load the user's departments fresh on every session so access
+        // checks see the current state without needing to re-login.
+        const depts = await prisma.department.findMany({
+          where: { users: { some: { id: user.id } } },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        });
+        session.user.departments = depts;
       }
       return session;
     },
