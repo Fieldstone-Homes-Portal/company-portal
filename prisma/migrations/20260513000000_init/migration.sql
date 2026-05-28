@@ -75,6 +75,10 @@ CREATE TABLE IF NOT EXISTS "VerificationToken" (
 );
 
 -- CreateTable
+-- NOTE: `section` is intentionally NOT in this baseline. It's added by
+-- the next migration (20260513120000_add_section_to_portalapp) so that
+-- this baseline can be safely marked as already-applied against existing
+-- production databases that haven't yet seen the section column.
 CREATE TABLE IF NOT EXISTS "PortalApp" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -83,7 +87,6 @@ CREATE TABLE IF NOT EXISTS "PortalApp" (
     "url" TEXT NOT NULL,
     "minRole" "Role" NOT NULL DEFAULT 'EMPLOYEE',
     "category" TEXT NOT NULL DEFAULT 'general',
-    "section" TEXT NOT NULL DEFAULT 'tool',
     "sortOrder" INTEGER NOT NULL DEFAULT 0,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "openIn" TEXT NOT NULL DEFAULT 'iframe',
@@ -92,11 +95,6 @@ CREATE TABLE IF NOT EXISTS "PortalApp" (
 
     CONSTRAINT "PortalApp_pkey" PRIMARY KEY ("id")
 );
-
--- Belt-and-suspenders: section column might be missing on databases that
--- existed before this baseline (e.g., somebody who fast-forwarded past
--- the auto-db-push change). Add it if it isn't there yet.
-ALTER TABLE "PortalApp" ADD COLUMN IF NOT EXISTS "section" TEXT NOT NULL DEFAULT 'tool';
 
 -- CreateTable
 CREATE TABLE IF NOT EXISTS "PortalFile" (

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
-    "start": "prisma migrate deploy && next start -p ${PORT:-3000}",
+    "start": "prisma migrate resolve --applied 20260513000000_init 2>/dev/null; prisma migrate deploy && next start -p ${PORT:-3000}",
     "lint": "eslint"
   },
   "prisma": {
