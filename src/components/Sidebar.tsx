@@ -18,6 +18,10 @@ import { useState } from "react";
 
 interface SidebarProps {
   role: string;
+  // Async server-rendered slot composed in by the portal layout. Lives
+  // above the CORNERSTONE footer tag. Kept generic so we can drop in
+  // additional live data points later without re-plumbing the sidebar.
+  footerSlot?: React.ReactNode;
 }
 
 const employeeNav = [
@@ -41,7 +45,7 @@ const adminNav = [
   { label: "Departments", href: "/admin/departments", icon: Building2 },
 ];
 
-export default function Sidebar({ role }: SidebarProps) {
+export default function Sidebar({ role, footerSlot }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const isManager = role === "MANAGER" || role === "ADMIN";
@@ -169,6 +173,9 @@ export default function Sidebar({ role }: SidebarProps) {
           </>
         )}
       </nav>
+
+      {/* Live data slot — sits just above the Cornerstone footer tag. */}
+      {!collapsed && footerSlot}
 
       {/* Footer branding — Cornerstone tag with subtle icon */}
       {!collapsed && (

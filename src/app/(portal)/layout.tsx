@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import MortgageRateTag from "@/components/MortgageRateTag";
 
 export default async function PortalLayout({
   children,
@@ -13,7 +14,7 @@ export default async function PortalLayout({
 
   return (
     <div className="flex h-full">
-      <Sidebar role={session.user.role} />
+      <Sidebar role={session.user.role} footerSlot={<MortgageRateTag />} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           user={{
