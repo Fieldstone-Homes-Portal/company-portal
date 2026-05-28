@@ -49,7 +49,10 @@ const companyLinks = [
   {
     name: "Novi Home",
     description: "Home builder sales platform",
-    url: "https://login.novihome.com",
+    // ?redirectUrl=… is Novi's "after login, jump to dashboard" param.
+    // We deliberately don't include an applicationToken because those
+    // are per-user session credentials that expire and can't be shared.
+    url: "https://login.novihome.com/?redirectUrl=https%3A%2F%2Fdashboard.novihome.com%2F",
     icon: "🏘️",
     category: "Sales & Marketing",
   },
