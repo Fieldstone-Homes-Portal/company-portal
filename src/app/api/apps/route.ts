@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       url: body.url,
       minRole: body.minRole || "EMPLOYEE",
       category: body.category || "general",
+      section: body.section || "tool",
       sortOrder: body.sortOrder || 0,
       openIn: body.openIn || "iframe",
     },

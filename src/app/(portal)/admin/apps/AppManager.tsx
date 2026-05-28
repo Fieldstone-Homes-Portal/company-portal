@@ -12,6 +12,7 @@ interface App {
   url: string;
   minRole: string;
   category: string;
+  section: string;
   sortOrder: number;
   isActive: boolean;
   openIn: string;
@@ -29,6 +30,11 @@ const ICONS = [
 ];
 const ROLES = ["EMPLOYEE", "MANAGER", "ADMIN"];
 const OPEN_MODES = ["iframe", "external"];
+// Which area of the portal the app shows up in.
+const SECTIONS = [
+  { value: "tool",      label: "Toolbox" },
+  { value: "dashboard", label: "Dashboards" },
+];
 
 export default function AppManager({ initialApps }: { initialApps: App[] }) {
   const [apps, setApps] = useState(initialApps);
@@ -44,6 +50,7 @@ export default function AppManager({ initialApps }: { initialApps: App[] }) {
     url: "",
     minRole: "EMPLOYEE",
     category: "general",
+    section: "tool",
     sortOrder: 0,
     openIn: "iframe",
   });
@@ -56,6 +63,7 @@ export default function AppManager({ initialApps }: { initialApps: App[] }) {
       url: "",
       minRole: "EMPLOYEE",
       category: "general",
+      section: "tool",
       sortOrder: 0,
       openIn: "iframe",
     });
@@ -71,6 +79,7 @@ export default function AppManager({ initialApps }: { initialApps: App[] }) {
       url: app.url,
       minRole: app.minRole,
       category: app.category,
+      section: app.section || "tool",
       sortOrder: app.sortOrder,
       openIn: app.openIn,
     });
@@ -260,6 +269,24 @@ export default function AppManager({ initialApps }: { initialApps: App[] }) {
                 ))}
               </select>
             </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-fs-copper">
+                Section <span className="text-fs-copper-light">— which page in the portal it lives on</span>
+              </label>
+              <select
+                value={form.section}
+                onChange={(e) =>
+                  setForm({ ...form, section: e.target.value })
+                }
+                className="w-full rounded-xl border border-fs-warm-gray bg-fs-warm-white px-4 py-2.5 text-sm text-fs-espresso focus:border-fs-copper focus:outline-none focus:ring-1 focus:ring-fs-copper"
+              >
+                {SECTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="mt-6 flex justify-end gap-3">
@@ -297,6 +324,9 @@ export default function AppManager({ initialApps }: { initialApps: App[] }) {
                 </h3>
                 <span className="rounded-full bg-fs-warm-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fs-copper">
                   {app.minRole.toLowerCase()}
+                </span>
+                <span className="rounded-full bg-fs-espresso/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fs-espresso">
+                  {app.section === "dashboard" ? "Dashboards" : "Toolbox"}
                 </span>
                 {!app.isActive && (
                   <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">

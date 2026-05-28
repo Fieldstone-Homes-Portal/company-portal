@@ -10,8 +10,10 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
+  // Toolbox only shows apps in the "tool" section. Apps marked as
+  // "dashboard" appear in /dashboards instead.
   const apps = await prisma.portalApp.findMany({
-    where: { isActive: true },
+    where: { isActive: true, section: "tool" },
     orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
   });
 

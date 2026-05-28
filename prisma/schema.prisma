@@ -69,6 +69,12 @@ model PortalApp {
   url         String
   minRole     Role     @default(EMPLOYEE)
   category    String   @default("general")
+  // Which area of the portal this app shows up in.
+  //   "tool"      → Toolbox page (apps grid at /dashboard) — DEFAULT
+  //   "dashboard" → Dashboards page (/dashboards)
+  // Stored as a free-form string so adding new sections later (e.g. "report")
+  // doesn't require a migration.
+  section     String   @default("tool")
   sortOrder   Int      @default(0)
   isActive    Boolean  @default(true)
   openIn      String   @default("iframe")
