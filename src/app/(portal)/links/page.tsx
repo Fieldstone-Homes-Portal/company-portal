@@ -84,6 +84,27 @@ const companyLinks = [
     icon: "💰",
     category: "Operations",
   },
+  {
+    name: "Empower",
+    description: "Retirement and 401(k) account",
+    url: "https://participant.empower-retirement.com/participant/#/login?accu=Empower",
+    icon: "🏦",
+    category: "Benefits & HR",
+  },
+  {
+    name: "Navigator",
+    description: "Open Enrollment and benefits",
+    url: "https://www.employeenavigator.com/",
+    icon: "📝",
+    category: "Benefits & HR",
+  },
+  {
+    name: "SelectHealth",
+    description: "Health insurance",
+    url: "https://selecthealth.org/",
+    icon: "🏥",
+    category: "Benefits & HR",
+  },
 ];
 
 const categories = [...new Set(companyLinks.map((l) => l.category))];
