@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Shield, ShieldCheck, User } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Search, Shield, ShieldCheck, User, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import DepartmentMultiSelect from "@/components/DepartmentMultiSelect";
+import { getRoleLabel } from "@/lib/roles";
+import type { Role } from "@prisma/client";
 
 interface Department {
   id: string;
@@ -37,7 +39,26 @@ export default function UserManager({
 }) {
   const [users, setUsers] = useState(initialUsers);
   const [saving, setSaving] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   const router = useRouter();
+
+  // Client-side filter over the already-loaded list. Matches name, email,
+  // role, and department names so the search box covers every visible field.
+  const filteredUsers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) => {
+      const haystack = [
+        u.name ?? "",
+        u.email,
+        getRoleLabel(u.role as Role),
+        ...u.departments.map((d) => d.name),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [users, query]);
 
   async function updateRole(userId: string, role: string) {
     setSaving(userId);
@@ -77,7 +98,50 @@ export default function UserManager({
 
   return (
     <div className="space-y-3">
-      {users.map((user) => {
+      {/* Search + count */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 sm:max-w-md">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fs-copper-light"
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, email, role, or department…"
+            className="w-full rounded-xl border border-fs-warm-gray bg-white py-2 pl-9 pr-9 text-sm text-fs-espresso placeholder:text-fs-copper-light focus:border-fs-copper focus:outline-none"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-fs-copper-light transition-colors hover:bg-fs-warm-white hover:text-fs-copper"
+              title="Clear search"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <p className="shrink-0 text-sm text-fs-copper">
+          {query ? (
+            <>
+              <span className="font-semibold text-fs-espresso">
+                {filteredUsers.length}
+              </span>{" "}
+              of {users.length} {users.length === 1 ? "user" : "users"}
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-fs-espresso">
+                {users.length}
+              </span>{" "}
+              {users.length === 1 ? "user" : "users"}
+            </>
+          )}
+        </p>
+      </div>
+
+      {filteredUsers.map((user) => {
         const Icon = ROLE_ICONS[user.role] || User;
         const isCurrentUser = user.id === currentUserId;
         const selectedIds = user.departments.map((d) => d.id);
@@ -159,6 +223,12 @@ export default function UserManager({
       {users.length === 0 && (
         <p className="py-8 text-center text-sm text-fs-copper">
           No users have signed in yet.
+        </p>
+      )}
+
+      {users.length > 0 && filteredUsers.length === 0 && (
+        <p className="py-8 text-center text-sm text-fs-copper">
+          No users match &ldquo;{query}&rdquo;.
         </p>
       )}
 
