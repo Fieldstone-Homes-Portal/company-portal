@@ -28,6 +28,12 @@ const ROLE_ICONS: Record<string, typeof User> = {
   ADMIN: ShieldCheck,
 };
 
+const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000; // "recently joined" = last 7 days
+
+function joinedWithinWindow(createdAt: string | Date) {
+  return Date.now() - new Date(createdAt).getTime() <= RECENT_WINDOW_MS;
+}
+
 export default function UserManager({
   initialUsers,
   allDepartments,
@@ -40,14 +46,25 @@ export default function UserManager({
   const [users, setUsers] = useState(initialUsers);
   const [saving, setSaving] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<"all" | "recent">("all");
   const router = useRouter();
 
-  // Client-side filter over the already-loaded list. Matches name, email,
-  // role, and department names so the search box covers every visible field.
+  const recentCount = useMemo(
+    () => users.filter((u) => joinedWithinWindow(u.createdAt)).length,
+    [users],
+  );
+
+  // Client-side filter over the already-loaded list. The "recent" tab limits
+  // to users who joined in the last 7 days; the search box then matches name,
+  // email, role, and department names across whichever tab is active.
   const filteredUsers = useMemo(() => {
+    const base =
+      tab === "recent"
+        ? users.filter((u) => joinedWithinWindow(u.createdAt))
+        : users;
     const q = query.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter((u) => {
+    if (!q) return base;
+    return base.filter((u) => {
       const haystack = [
         u.name ?? "",
         u.email,
@@ -58,7 +75,7 @@ export default function UserManager({
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [users, query]);
+  }, [users, query, tab]);
 
   async function updateRole(userId: string, role: string) {
     setSaving(userId);
@@ -96,8 +113,43 @@ export default function UserManager({
     }
   }
 
+  const tabTotal = tab === "recent" ? recentCount : users.length;
+
   return (
     <div className="space-y-3">
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-fs-warm-gray">
+        <button
+          onClick={() => setTab("all")}
+          className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            tab === "all"
+              ? "border-fs-copper text-fs-espresso"
+              : "border-transparent text-fs-copper hover:text-fs-espresso"
+          }`}
+        >
+          All users
+        </button>
+        <button
+          onClick={() => setTab("recent")}
+          className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            tab === "recent"
+              ? "border-fs-copper text-fs-espresso"
+              : "border-transparent text-fs-copper hover:text-fs-espresso"
+          }`}
+        >
+          Recently joined
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+              tab === "recent"
+                ? "bg-fs-copper text-white"
+                : "bg-fs-warm-white text-fs-copper"
+            }`}
+          >
+            {recentCount}
+          </span>
+        </button>
+      </div>
+
       {/* Search + count */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 sm:max-w-md">
@@ -128,14 +180,15 @@ export default function UserManager({
               <span className="font-semibold text-fs-espresso">
                 {filteredUsers.length}
               </span>{" "}
-              of {users.length} {users.length === 1 ? "user" : "users"}
+              of {tabTotal} {tabTotal === 1 ? "user" : "users"}
             </>
           ) : (
             <>
               <span className="font-semibold text-fs-espresso">
-                {users.length}
+                {tabTotal}
               </span>{" "}
-              {users.length === 1 ? "user" : "users"}
+              {tabTotal === 1 ? "user" : "users"}
+              {tab === "recent" && " joined in the last 7 days"}
             </>
           )}
         </p>
@@ -211,8 +264,13 @@ export default function UserManager({
                 <label className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-fs-copper-light">
                   Joined
                 </label>
-                <p className="text-sm text-fs-copper">
+                <p className="flex items-center gap-2 text-sm text-fs-copper">
                   {new Date(user.createdAt).toLocaleDateString()}
+                  {joinedWithinWindow(user.createdAt) && (
+                    <span className="rounded-full bg-fs-copper/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fs-copper">
+                      New
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -228,7 +286,9 @@ export default function UserManager({
 
       {users.length > 0 && filteredUsers.length === 0 && (
         <p className="py-8 text-center text-sm text-fs-copper">
-          No users match &ldquo;{query}&rdquo;.
+          {query
+            ? `No users match “${query}”${tab === "recent" ? " among those who joined in the last 7 days" : ""}.`
+            : "No users have joined in the last 7 days."}
         </p>
       )}
 
