@@ -105,6 +105,20 @@ const companyLinks = [
     icon: "🏥",
     category: "Benefits & HR",
   },
+  {
+    name: "SunLife",
+    description: "Dental insurance",
+    url: "https://account.sunlifeconnect.com/commonlogin/#/login/10",
+    icon: "🦷",
+    category: "Benefits & HR",
+  },
+  {
+    name: "MetLife",
+    description: "Vision insurance",
+    url: "https://www.metlife.com/",
+    icon: "👓",
+    category: "Benefits & HR",
+  },
 ];
 
 const categories = [...new Set(companyLinks.map((l) => l.category))];
