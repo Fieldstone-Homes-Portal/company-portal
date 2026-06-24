@@ -4,9 +4,13 @@ import { canAccessApp, whyBlocked } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Lock } from "lucide-react";
+import { createHmac } from "crypto";
 import AppEmbed from "./AppEmbed";
 
 const PORTAL_ACCESS_TOKEN = process.env.PORTAL_ACCESS_TOKEN || "";
+// Shared secret for signing the forwarded login (must match the sub-app). When
+// unset, identity forwarding is off and behavior is unchanged.
+const IDENTITY_SIGNING_SECRET = process.env.IDENTITY_SIGNING_SECRET || "";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -56,9 +60,24 @@ export default async function AppPage({ params }: Props) {
 
   // Append portal token to iframe URL for the downstream app's access gate
   const separator = app.url.includes("?") ? "&" : "?";
-  const iframeSrc = PORTAL_ACCESS_TOKEN
+  let iframeSrc = PORTAL_ACCESS_TOKEN
     ? `${app.url}${separator}portal_token=${PORTAL_ACCESS_TOKEN}`
     : app.url;
+
+  // Forward the signed logged-in identity so downstream apps can personalize or
+  // gate by user (e.g. the Sales Dashboard's per-viewer To-Do + Closing Report
+  // lock). HMAC-signed with a shared secret so the sub-app can trust it and a
+  // user can't forge another identity; apps that don't use it ignore the params.
+  // Only added when IDENTITY_SIGNING_SECRET is set, so it's a no-op until then.
+  if (IDENTITY_SIGNING_SECRET && session.user.email) {
+    const email = session.user.email.toLowerCase();
+    const name = session.user.name ?? "";
+    const sig = createHmac("sha256", IDENTITY_SIGNING_SECRET)
+      .update(`${email}|${name}`)
+      .digest("hex");
+    const params = new URLSearchParams({ fsh_user: email, fsh_name: name, fsh_sig: sig });
+    iframeSrc += `${iframeSrc.includes("?") ? "&" : "?"}${params.toString()}`;
+  }
 
   return <AppEmbed name={app.name} iframeSrc={iframeSrc} />;
 }
