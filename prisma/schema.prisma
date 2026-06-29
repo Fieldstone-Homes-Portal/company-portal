@@ -29,6 +29,8 @@ model User {
   // Used by access-gating: EMPLOYEEs need to be in at least one of an
   // app's restricted departments to access it. MANAGERs and ADMINs bypass.
   departments   Department[] @relation("UserDepartments")
+  // Per-user "recently opened" history powering the Home page.
+  recentOpens   RecentOpen[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -118,4 +120,28 @@ model PortalFile {
   uploadedBy  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// RecentOpen: per-user "recently opened" history that powers the Home page's
+// "Jump back in" row. One row per (user, kind, target) — re-opening an item
+// just bumps `openedAt` (see the upsert in /api/track-open), so a user only
+// ever has one row per distinct thing they've opened.
+//
+//   kind = "app"   → targetId is a PortalApp.id; the Home tile links to /apps/{targetId}
+//   kind = "link"  → targetId is the external URL (also stored in `url`); the
+//                    tile opens it in a new tab. `label`/`icon` are denormalized
+//                    so the Home page can render without re-joining.
+model RecentOpen {
+  id       String   @id @default(cuid())
+  userId   String
+  kind     String
+  targetId String
+  label    String
+  icon     String?
+  url      String?
+  openedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, targetId])
+  @@index([userId, openedAt])
 }

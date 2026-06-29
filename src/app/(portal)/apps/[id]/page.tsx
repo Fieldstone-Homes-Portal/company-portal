@@ -79,5 +79,5 @@ export default async function AppPage({ params }: Props) {
     iframeSrc += `${iframeSrc.includes("?") ? "&" : "?"}${params.toString()}`;
   }
 
-  return <AppEmbed name={app.name} iframeSrc={iframeSrc} />;
+  return <AppEmbed name={app.name} iframeSrc={iframeSrc} appId={app.id} />;
 }

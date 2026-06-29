@@ -5,7 +5,7 @@ import SignInButton from "./SignInButton";
 
 export default async function LoginPage() {
   const session = await auth();
-  if (session) redirect("/dashboard");
+  if (session) redirect("/home");
 
   return (
     <div className="flex min-h-full">

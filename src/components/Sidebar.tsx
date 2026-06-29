@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Home,
   LayoutDashboard,
   Link2,
   Settings,
@@ -25,6 +26,9 @@ interface SidebarProps {
 }
 
 const employeeNav = [
+  // Home is the landing page after sign-in: greeting, "jump back in", and the
+  // latest All Staff announcements.
+  { label: "Home", href: "/home", icon: Home },
   // "Toolbox" is the old "Dashboard" page — the grid of apps. Renamed
   // to free up the "Dashboard" name for actual data dashboards.
   { label: "Toolbox", href: "/dashboard", icon: Boxes },
@@ -76,7 +80,7 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
       <div className="relative flex h-16 items-center border-b border-white/10 px-4">
         {!collapsed ? (
           <>
-            <Link href="/dashboard" className="flex flex-1 items-center">
+            <Link href="/home" className="flex flex-1 items-center">
               <img
                 src="/fieldstone-logo-white.png"
                 alt="Fieldstone Homes"
