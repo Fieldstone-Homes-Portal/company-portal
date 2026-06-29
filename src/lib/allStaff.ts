@@ -1,24 +1,13 @@
 /**
- * Read-only Microsoft Graph client for the Fieldstone **All Staff** M365 Group.
+ * Read-only client for the Fieldstone **All Staff** M365 Group conversations.
  *
- * A TypeScript port of the Python `graph.py` from the `all-staff-feed` sub-app, so
- * the portal can render the newest All Staff announcements natively (no iframe) on
- * the Home page. App-only (client-credentials) auth — it only ever issues GET
- * requests and stores nothing; a short in-memory cache keeps it snappy.
- *
- * Env vars (set in Railway for prod, in a git-ignored .env.local locally):
- *   GRAPH_TENANT_ID      Entra tenant id
- *   GRAPH_CLIENT_ID      App registration (client) id
- *   GRAPH_CLIENT_SECRET  App client secret      <-- the only secret; never hardcode
- *   ALLSTAFF_GROUP       group mail (default allstaff@fieldstonehomes.com)
- *   ALLSTAFF_GROUP_ID    (optional) group object id, to skip the lookup
- *   FEED_CACHE_TTL       (optional) seconds to cache the feed in memory (default 600)
- *
- * Mirrors `latest_emails()` in all-staff-feed/graph.py — see the README there for the
- * "why Groups, not the mailbox API" rationale and the Entra setup (Group.Read.All).
+ * Renders the newest All Staff announcements natively on the Home page (no
+ * iframe). A TypeScript port of the Python `graph.py` from `all-staff-feed`;
+ * shares the app-only Graph auth in `graphClient.ts`. Read-only, stores nothing,
+ * short in-memory cache. Mirrors `latest_emails()` — see that repo's README for
+ * the "why Groups, not the mailbox API" rationale and the Entra setup.
  */
-
-const GRAPH = "https://graph.microsoft.com/v1.0";
+import { graphGet, groupId } from "./graphClient";
 
 export interface AllStaffEmail {
   subject: string;
@@ -29,96 +18,12 @@ export interface AllStaffEmail {
   bodyText: string;
 }
 
-function cfg(key: string, fallback?: string, required = false): string {
-  const v = process.env[key] ?? fallback;
-  if (required && !v) {
-    throw new Error(`Missing required env var: ${key}`);
-  }
-  return v ?? "";
-}
-
-/* --------------------------------------------------------------------------- */
-/*  Auth (client-credentials, app-only) — token cached until ~60s before expiry */
-/* --------------------------------------------------------------------------- */
-
-let tokenCache: { value: string | null; exp: number } = { value: null, exp: 0 };
-
-async function getToken(): Promise<string> {
-  const now = Date.now() / 1000;
-  if (tokenCache.value && now < tokenCache.exp - 60) {
-    return tokenCache.value;
-  }
-  const tenant = cfg("GRAPH_TENANT_ID", undefined, true);
-  const body = new URLSearchParams({
-    client_id: cfg("GRAPH_CLIENT_ID", undefined, true),
-    client_secret: cfg("GRAPH_CLIENT_SECRET", undefined, true),
-    scope: "https://graph.microsoft.com/.default",
-    grant_type: "client_credentials",
-  });
-  const res = await fetch(
-    `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
-    { method: "POST", body, headers: { "Content-Type": "application/x-www-form-urlencoded" } },
-  );
-  if (!res.ok) {
-    throw new Error(`Graph token request failed: ${res.status} ${await res.text()}`);
-  }
-  const j = (await res.json()) as { access_token: string; expires_in?: number };
-  tokenCache = { value: j.access_token, exp: now + (j.expires_in ?? 3600) };
-  return j.access_token;
-}
-
-async function graphGet<T>(path: string, params?: Record<string, string>): Promise<T> {
-  const url = new URL(GRAPH + path);
-  if (params) {
-    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  }
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${await getToken()}` },
-  });
-  if (!res.ok) {
-    throw new Error(`Graph GET ${path} failed: ${res.status} ${await res.text()}`);
-  }
-  return (await res.json()) as T;
-}
-
-/* --------------------------------------------------------------------------- */
-/*  Group id resolution (cached)                                                */
-/* --------------------------------------------------------------------------- */
-
-let groupIdCache: string | null = null;
-
-async function groupId(): Promise<string> {
-  if (groupIdCache) return groupIdCache;
-  const explicit = cfg("ALLSTAFF_GROUP_ID");
-  if (explicit) {
-    groupIdCache = explicit;
-    return explicit;
-  }
-  const mail = cfg("ALLSTAFF_GROUP", "allstaff@fieldstonehomes.com");
-  const data = await graphGet<{ value: { id: string }[] }>("/groups", {
-    $filter: `mail eq '${mail}'`,
-    $select: "id,displayName,mail",
-  });
-  const vals = data.value ?? [];
-  if (vals.length === 0) {
-    throw new Error(`No M365 group found with mail '${mail}'`);
-  }
-  groupIdCache = vals[0].id;
-  return groupIdCache;
-}
-
 /* --------------------------------------------------------------------------- */
 /*  HTML → text, signature trimming, topic normalization                        */
 /* --------------------------------------------------------------------------- */
 
 const NAMED_ENTITIES: Record<string, string> = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  apos: "'",
-  nbsp: " ",
-  "#39": "'",
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", "#39": "'",
 };
 
 function unescapeHtml(s: string): string {
@@ -154,9 +59,7 @@ const SIGN_OFF =
 function trimSignature(text: string): string {
   if (!text) return text;
   const m = SIGN_OFF.exec(text);
-  if (m && m.index > 40) {
-    text = text.slice(0, m.index);
-  }
+  if (m && m.index > 40) text = text.slice(0, m.index);
   for (const anchor of ["FieldstoneHomes.com", "12896 S Pony Express", "12896 South Pony"]) {
     const i = text.indexOf(anchor);
     if (i > 40) text = text.slice(0, i);
@@ -175,10 +78,6 @@ function normTopic(s: string | undefined): string {
   }
   return cur.trim().toLowerCase();
 }
-
-/* --------------------------------------------------------------------------- */
-/*  Graph shapes                                                                */
-/* --------------------------------------------------------------------------- */
 
 interface GraphThread {
   id: string;
@@ -203,7 +102,6 @@ async function originalPost(gid: string, threadId: string): Promise<GraphPost> {
       );
       return data.value?.[0] ?? {};
     } catch {
-      // Some tenants reject $orderby on posts — fall back to fetch-all + sort.
       const data = await graphGet<{ value: GraphPost[] }>(
         `/groups/${gid}/threads/${threadId}/posts`,
         { $select: "from,receivedDateTime,body" },
@@ -214,17 +112,13 @@ async function originalPost(gid: string, threadId: string): Promise<GraphPost> {
       return posts[0] ?? {};
     }
   } catch {
-    // One bad thread shouldn't sink the whole feed — skip it.
     return {};
   }
 }
 
 /**
  * The newest `n` **distinct** All Staff announcements (originals, not replies).
- *
- * Scans the newest `scan` threads, collapses reply threads onto their announcement by
- * normalized subject, keeps each announcement's *original* post, and returns the newest
- * `n` by original date. Read-only and live — nothing is persisted.
+ * Read-only and live — nothing is persisted.
  */
 export async function latestEmails(n = 3, scan = 20, bodyChars = 1000): Promise<AllStaffEmail[]> {
   const gid = await groupId();
@@ -234,10 +128,6 @@ export async function latestEmails(n = 3, scan = 20, bodyChars = 1000): Promise<
     $select: "id,topic,lastDeliveredDateTime,preview",
   });
   const threads = threadsData.value ?? [];
-
-  // Fetch each thread's originating post in parallel (the Python client did this
-  // serially — one HTTP round-trip per thread — which made the first uncached
-  // render slow). originalPost() never throws, so this is safe.
   const posts = await Promise.all(threads.map((t) => originalPost(gid, t.id)));
 
   const byTopic = new Map<string, AllStaffEmail>();
@@ -246,8 +136,7 @@ export async function latestEmails(n = 3, scan = 20, bodyChars = 1000): Promise<
     const post = posts[i];
     const from = post.from?.emailAddress ?? {};
     const date = post.receivedDateTime || t.lastDeliveredDateTime || "";
-    let body =
-      trimSignature(htmlToText(post.body?.content ?? "")) || t.preview || "";
+    let body = trimSignature(htmlToText(post.body?.content ?? "")) || t.preview || "";
     if (bodyChars && body.length > bodyChars) {
       body = body.slice(0, bodyChars).replace(/\s+$/, "") + "…";
     }
@@ -260,22 +149,14 @@ export async function latestEmails(n = 3, scan = 20, bodyChars = 1000): Promise<
       bodyText: body,
     };
     const key = normTopic(t.topic);
-    // keep the EARLIEST post per subject = the original announcement, not a reply
     const existing = byTopic.get(key);
-    if (!existing || (date && date < existing.date)) {
-      byTopic.set(key, entry);
-    }
+    if (!existing || (date && date < existing.date)) byTopic.set(key, entry);
   }
 
-  return [...byTopic.values()]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, n);
+  return [...byTopic.values()].sort((a, b) => b.date.localeCompare(a.date)).slice(0, n);
 }
 
-/* --------------------------------------------------------------------------- */
-/*  In-memory TTL cache (mirrors the Flask app's _cached_feed)                   */
-/* --------------------------------------------------------------------------- */
-
+/* In-memory TTL cache (mirrors the Flask app's _cached_feed). */
 let feedCache: { data: AllStaffEmail[]; exp: number } | null = null;
 
 /**
@@ -285,9 +166,7 @@ let feedCache: { data: AllStaffEmail[]; exp: number } | null = null;
 export async function getLatestAllStaff(n = 3): Promise<AllStaffEmail[]> {
   const ttl = parseInt(process.env.FEED_CACHE_TTL ?? "600", 10);
   const now = Date.now() / 1000;
-  if (feedCache && now < feedCache.exp) {
-    return feedCache.data;
-  }
+  if (feedCache && now < feedCache.exp) return feedCache.data;
   const data = await latestEmails(n);
   feedCache = { data, exp: now + ttl };
   return data;

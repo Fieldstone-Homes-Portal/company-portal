@@ -3,24 +3,33 @@ import { redirect } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import RecentlyOpenedSection from "@/components/home/RecentlyOpenedSection";
 import AllStaffSection from "@/components/home/AllStaffSection";
+import UpcomingSection from "@/components/home/UpcomingSection";
+import CalendarSection from "@/components/home/CalendarSection";
 import { getRecentOpens } from "@/lib/recentOpens";
 import { getLatestAllStaff, type AllStaffEmail } from "@/lib/allStaff";
+import { getUpcoming, getCalendarMonth } from "@/lib/companyCalendar";
+
+const pad = (n: number) => String(n).padStart(2, "0");
 
 export default async function HomePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const hour = new Date(
+  const denverNow = new Date(
     new Date().toLocaleString("en-US", { timeZone: "America/Denver" }),
-  ).getHours();
+  );
+  const hour = denverNow.getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const firstName = session.user.name?.split(" ")[0] || "there";
+  const year = denverNow.getFullYear();
+  const month = denverNow.getMonth() + 1;
+  const todayYmd = `${year}-${pad(month)}-${pad(denverNow.getDate())}`;
 
-  // Fetch both sections in parallel. The All Staff feed hits Microsoft Graph
-  // (cached in-memory), so degrade gracefully if it's misconfigured/unreachable
-  // — the rest of the page should still render.
-  const [recents, allStaff] = await Promise.all([
+  // All four sections load in parallel. All Staff and the calendar both hit
+  // Microsoft Graph (cached); the calendar helpers swallow Graph errors and
+  // still return holidays + anniversaries, so the page never breaks.
+  const [recents, allStaff, upcoming, monthData] = await Promise.all([
     getRecentOpens(session.user, 3),
     getLatestAllStaff(3)
       .then((emails) => ({ emails, error: null as string | null }))
@@ -28,6 +37,8 @@ export default async function HomePage() {
         emails: [] as AllStaffEmail[],
         error: e instanceof Error ? e.message : "Unknown error",
       })),
+    getUpcoming(todayYmd, 45),
+    getCalendarMonth(year, month),
   ]);
 
   return (
@@ -41,6 +52,8 @@ export default async function HomePage() {
       <div className="space-y-10">
         <RecentlyOpenedSection items={recents} />
         <AllStaffSection emails={allStaff.emails} error={allStaff.error} />
+        <UpcomingSection items={upcoming} />
+        <CalendarSection initial={monthData} />
       </div>
     </div>
   );
