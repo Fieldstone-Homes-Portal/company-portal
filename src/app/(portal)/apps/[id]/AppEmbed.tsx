@@ -1,16 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Maximize2, Minimize2 } from "lucide-react";
+import { trackOpen } from "@/components/TrackedLink";
 
 interface AppEmbedProps {
   name: string;
   iframeSrc: string;
+  appId: string;
 }
 
-export default function AppEmbed({ name, iframeSrc }: AppEmbedProps) {
+export default function AppEmbed({ name, iframeSrc, appId }: AppEmbedProps) {
   const [fullscreen, setFullscreen] = useState(false);
+
+  // Record the open once, when the app actually renders (not on prefetch), so
+  // it surfaces in the user's "recently opened" row on the Home page.
+  useEffect(() => {
+    trackOpen("app", appId);
+  }, [appId]);
 
   if (fullscreen) {
     return (

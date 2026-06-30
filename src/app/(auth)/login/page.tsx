@@ -1,11 +1,12 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { landingPath } from "@/lib/roles";
 /* eslint-disable @next/next/no-img-element */
 import SignInButton from "./SignInButton";
 
 export default async function LoginPage() {
   const session = await auth();
-  if (session) redirect("/dashboard");
+  if (session?.user) redirect(landingPath(session.user.role));
 
   return (
     <div className="flex min-h-full">

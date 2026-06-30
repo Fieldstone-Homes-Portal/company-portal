@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Home,
   LayoutDashboard,
   Link2,
   Settings,
@@ -32,6 +33,10 @@ const employeeNav = [
   { label: "Links", href: "/links", icon: Link2 },
 ];
 
+// The new Home landing is admin-only during the soft launch — it leads the nav
+// for ADMINs and is hidden for everyone else (who still land on the Toolbox).
+const homeNav = { label: "Home", href: "/home", icon: Home };
+
 // Manager-level admin links — visible to MANAGERs and ADMINs.
 const managerNav = [
   { label: "Manage Apps", href: "/admin/apps", icon: AppWindow },
@@ -50,6 +55,7 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const isManager = role === "MANAGER" || role === "ADMIN";
   const isAdmin = role === "ADMIN";
+  const mainNav = isAdmin ? [homeNav, ...employeeNav] : employeeNav;
 
   return (
     <aside
@@ -76,7 +82,7 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
       <div className="relative flex h-16 items-center border-b border-white/10 px-4">
         {!collapsed ? (
           <>
-            <Link href="/dashboard" className="flex flex-1 items-center">
+            <Link href={isAdmin ? "/home" : "/dashboard"} className="flex flex-1 items-center">
               <img
                 src="/fieldstone-logo-white.png"
                 alt="Fieldstone Homes"
@@ -107,7 +113,7 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
             Main
           </p>
         )}
-        {employeeNav.map((item) => {
+        {mainNav.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
             <Link

@@ -1,28 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Map,
-  BarChart3,
-  FileText,
-  Wrench,
-  Globe,
-  Calculator,
-  Users,
-  Briefcase,
-  type LucideIcon,
-} from "lucide-react";
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  map: Map,
-  chart: BarChart3,
-  file: FileText,
-  tool: Wrench,
-  globe: Globe,
-  calculator: Calculator,
-  users: Users,
-  briefcase: Briefcase,
-};
+import { appIcon } from "@/lib/appIcons";
 
 interface AppTileProps {
   id: string;
@@ -46,7 +25,7 @@ export default function AppTile({
   openIn,
   departments = [],
 }: AppTileProps) {
-  const Icon = ICON_MAP[icon || "tool"] || Wrench;
+  const Icon = appIcon(icon);
   const restricted = departments.length > 0;
 
   const content = (
