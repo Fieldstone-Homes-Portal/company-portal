@@ -48,11 +48,22 @@ export async function graphGet<T>(
 ): Promise<T> {
   const url = new URL(GRAPH + path);
   if (params) for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${await getToken()}`, ...(headers ?? {}) },
-  });
-  if (!res.ok) throw new Error(`Graph GET ${path} failed: ${res.status} ${await res.text()}`);
-  return (await res.json()) as T;
+  // Retry on throttling (429) and transient server errors, honoring Retry-After.
+  // Graph throttles bursts (e.g. fetching many group threads' posts at once).
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${await getToken()}`, ...(headers ?? {}) },
+    });
+    if (res.ok) return (await res.json()) as T;
+    const retryable = res.status === 429 || res.status >= 500;
+    if (retryable && attempt < 2) {
+      const ra = Number(res.headers.get("Retry-After"));
+      const waitMs = Number.isFinite(ra) && ra > 0 ? ra * 1000 : 400 * (attempt + 1);
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+    throw new Error(`Graph GET ${path} failed: ${res.status} ${await res.text()}`);
+  }
 }
 
 let groupIdCache: string | null = null;
