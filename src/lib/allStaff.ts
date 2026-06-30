@@ -92,28 +92,43 @@ interface GraphPost {
   body?: { content?: string };
 }
 
-/** The first (originating) post of a thread = the announcement, not the replies. */
+/**
+ * The first (originating) post of a thread = the announcement, not the replies.
+ *
+ * Graph rejects `$orderby` on group thread posts, so we fetch the posts and pick
+ * the earliest client-side. (Relying on `$orderby` here used to fail and fall
+ * back to an empty sender + the thread's latest reply.)
+ */
 async function originalPost(gid: string, threadId: string): Promise<GraphPost> {
   try {
-    try {
-      const data = await graphGet<{ value: GraphPost[] }>(
-        `/groups/${gid}/threads/${threadId}/posts`,
-        { $orderby: "receivedDateTime asc", $top: "1", $select: "from,receivedDateTime,body" },
-      );
-      return data.value?.[0] ?? {};
-    } catch {
-      const data = await graphGet<{ value: GraphPost[] }>(
-        `/groups/${gid}/threads/${threadId}/posts`,
-        { $select: "from,receivedDateTime,body" },
-      );
-      const posts = (data.value ?? []).sort((a, b) =>
-        (a.receivedDateTime ?? "").localeCompare(b.receivedDateTime ?? ""),
-      );
-      return posts[0] ?? {};
-    }
+    const data = await graphGet<{ value: GraphPost[] }>(
+      `/groups/${gid}/threads/${threadId}/posts`,
+      { $select: "from,receivedDateTime,body", $top: "50" },
+    );
+    const posts = (data.value ?? []).filter((p) => p.receivedDateTime);
+    posts.sort((a, b) => (a.receivedDateTime ?? "").localeCompare(b.receivedDateTime ?? ""));
+    return posts[0] ?? {};
   } catch {
     return {};
   }
+}
+
+/** Run `fn` over `items` with at most `limit` in flight at once, preserving order. */
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, i: number) => Promise<R>,
+): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
 }
 
 /**
@@ -128,7 +143,9 @@ export async function latestEmails(n = 3, scan = 20, bodyChars = 1000): Promise<
     $select: "id,topic,lastDeliveredDateTime,preview",
   });
   const threads = threadsData.value ?? [];
-  const posts = await Promise.all(threads.map((t) => originalPost(gid, t.id)));
+  // Cap concurrency so we don't trip Graph throttling on the burst of per-thread
+  // post fetches (which would drop threads to an empty sender + preview text).
+  const posts = await mapLimit(threads, 4, (t) => originalPost(gid, t.id));
 
   const byTopic = new Map<string, AllStaffEmail>();
   for (let i = 0; i < threads.length; i++) {
@@ -167,7 +184,10 @@ export async function getLatestAllStaff(n = 3): Promise<AllStaffEmail[]> {
   const ttl = parseInt(process.env.FEED_CACHE_TTL ?? "600", 10);
   const now = Date.now() / 1000;
   if (feedCache && now < feedCache.exp) return feedCache.data;
-  const data = await latestEmails(n);
+  // Fetch the full message body (not a 1000-char teaser) so the Home page's
+  // click-to-read modal can show the whole email. Signature/footer is still
+  // trimmed for readability.
+  const data = await latestEmails(n, 20, 8000);
   feedCache = { data, exp: now + ttl };
   return data;
 }
