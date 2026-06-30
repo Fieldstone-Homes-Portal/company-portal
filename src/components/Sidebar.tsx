@@ -26,15 +26,16 @@ interface SidebarProps {
 }
 
 const employeeNav = [
-  // Home is the landing page after sign-in: greeting, "jump back in", and the
-  // latest All Staff announcements.
-  { label: "Home", href: "/home", icon: Home },
   // "Toolbox" is the old "Dashboard" page — the grid of apps. Renamed
   // to free up the "Dashboard" name for actual data dashboards.
   { label: "Toolbox", href: "/dashboard", icon: Boxes },
   { label: "Dashboards", href: "/dashboards", icon: LayoutDashboard },
   { label: "Links", href: "/links", icon: Link2 },
 ];
+
+// The new Home landing is admin-only during the soft launch — it leads the nav
+// for ADMINs and is hidden for everyone else (who still land on the Toolbox).
+const homeNav = { label: "Home", href: "/home", icon: Home };
 
 // Manager-level admin links — visible to MANAGERs and ADMINs.
 const managerNav = [
@@ -54,6 +55,7 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const isManager = role === "MANAGER" || role === "ADMIN";
   const isAdmin = role === "ADMIN";
+  const mainNav = isAdmin ? [homeNav, ...employeeNav] : employeeNav;
 
   return (
     <aside
@@ -80,7 +82,7 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
       <div className="relative flex h-16 items-center border-b border-white/10 px-4">
         {!collapsed ? (
           <>
-            <Link href="/home" className="flex flex-1 items-center">
+            <Link href={isAdmin ? "/home" : "/dashboard"} className="flex flex-1 items-center">
               <img
                 src="/fieldstone-logo-white.png"
                 alt="Fieldstone Homes"
@@ -111,7 +113,7 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
             Main
           </p>
         )}
-        {employeeNav.map((item) => {
+        {mainNav.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
             <Link
