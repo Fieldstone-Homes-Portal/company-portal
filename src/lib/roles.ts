@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 export const ROLE_HIERARCHY: Record<Role, number> = {
   EMPLOYEE: 0,
@@ -53,20 +53,20 @@ type UserForAccess = {
  *
  * Rules (in order):
  *   1. Block if the user's role is below the app's `minRole`.
- *   2. ADMINs and MANAGERs bypass all department gating.
- *   3. EMPLOYEEs need to be a member of at least one of the app's
- *      restricted departments. An app with NO department restrictions
- *      is open to any employee meeting the role gate.
+ *   2. ADMINs bypass department gating (they can open everything).
+ *   3. Everyone else (MANAGERs and EMPLOYEEs) must be a member of at least
+ *      one of the app's restricted departments. An app with NO department
+ *      restrictions is open to anyone meeting the role gate.
  */
 export function canAccessApp(user: UserForAccess, app: AppForAccess): boolean {
   if (!hasMinRole(user.role, app.minRole)) return false;
-  if (user.role === "ADMIN" || user.role === "MANAGER") return true;
+  if (user.role === "ADMIN") return true; // only admins bypass department gating
 
   const appDepts = app.departments || [];
-  if (appDepts.length === 0) return true; // open to all employees in role
+  if (appDepts.length === 0) return true; // open to anyone meeting the role gate
 
   const userDepts = user.departments || [];
-  if (userDepts.length === 0) return false; // employee with no dept can't access restricted apps
+  if (userDepts.length === 0) return false; // no department → no access to a restricted app
 
   // Match on whatever identifier each side provides (prefer id, fall back to name).
   const userIds = new Set(userDepts.map((d) => d.id).filter(Boolean));

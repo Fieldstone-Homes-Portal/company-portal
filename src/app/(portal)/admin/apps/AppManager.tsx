@@ -301,11 +301,11 @@ export default function AppManager({
                 allDepartments={allDepartments}
                 selectedIds={form.departmentIds}
                 onChange={(ids) => setForm({ ...form, departmentIds: ids })}
-                emptyLabel="No restriction — any employee meeting the role gate can access."
+                emptyLabel="No restriction — anyone meeting the role gate can access."
                 placeholder="Select departments…"
               />
               <p className="mt-1.5 text-xs text-fs-copper-light">
-                Employees need at least one matching department. Managers and admins bypass.
+                Managers and employees need at least one matching department. Only admins bypass.
               </p>
             </div>
           </div>
