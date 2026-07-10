@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Boxes,
   Building2,
+  Shield,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -47,6 +48,7 @@ const managerNav = [
 // Admin-only links — visible to ADMINs only. Departments live here
 // because they affect access for everyone in the org.
 const adminNav = [
+  { label: "App Access", href: "/admin/access", icon: Shield },
   { label: "Departments", href: "/admin/departments", icon: Building2 },
 ];
 
