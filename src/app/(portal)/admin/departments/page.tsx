@@ -23,7 +23,7 @@ export default async function AdminDepartmentsPage() {
       <PageHeader
         label="Administration"
         title="Departments"
-        subtitle="Departments group employees and gate access to apps. Members of a department can access apps restricted to that department; managers and admins bypass department gates."
+        subtitle="Departments group employees and gate access to apps. Members of a department can access apps restricted to that department; only admins bypass department gates."
       />
       <DepartmentManager initialDepartments={departments} />
     </div>

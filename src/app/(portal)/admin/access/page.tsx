@@ -68,8 +68,9 @@ export default async function AdminAccessPage() {
         <Shield size={18} className="mt-0.5 shrink-0 text-fs-copper" />
         <p>
           Access is granted by <span className="font-semibold">minimum role</span> plus any{" "}
-          <span className="font-semibold">department</span> restriction. Managers and admins can
-          open everything (they bypass department limits); employees need a matching department.
+          <span className="font-semibold">department</span> restriction. Admins can open
+          everything (they bypass department limits); managers and employees need a matching
+          department.
           Change access under <span className="font-semibold">Manage Apps</span>,{" "}
           <span className="font-semibold">Manage Users</span>, and{" "}
           <span className="font-semibold">Departments</span>.
@@ -124,7 +125,7 @@ export default async function AdminAccessPage() {
                                   Departments:{" "}
                                   <span className="font-semibold">{depts.join(", ")}</span>{" "}
                                   <span className="text-fs-copper-light">
-                                    (managers &amp; admins bypass)
+                                    (admins bypass)
                                   </span>
                                 </>
                               )}

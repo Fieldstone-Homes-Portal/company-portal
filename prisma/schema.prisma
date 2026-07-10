@@ -26,8 +26,8 @@ model User {
   accounts      Account[]
   sessions      Session[]
   // Many-to-many: a user can belong to multiple departments.
-  // Used by access-gating: EMPLOYEEs need to be in at least one of an
-  // app's restricted departments to access it. MANAGERs and ADMINs bypass.
+  // Used by access-gating: non-admins need to be in at least one of an
+  // app's restricted departments to access it. Only ADMINs bypass.
   departments   Department[] @relation("UserDepartments")
   // Per-user "recently opened" history powering the Home page.
   recentOpens   RecentOpen[]
@@ -88,8 +88,8 @@ model PortalApp {
   openIn      String   @default("iframe")
   // Many-to-many: an app can be restricted to specific departments.
   //   Empty list  → no department restriction (anyone with the right role)
-  //   Non-empty   → EMPLOYEEs need to be in at least one of these depts
-  //                 (MANAGERs and ADMINs bypass — see lib/roles.ts)
+  //   Non-empty   → non-admins need to be in at least one of these depts
+  //                 (only ADMINs bypass — see lib/roles.ts)
   departments Department[] @relation("AppDepartments")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
