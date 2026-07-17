@@ -15,9 +15,6 @@ export default async function HomePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  // Admin-only for now (soft launch). Everyone else lands on the Toolbox.
-  if (session.user.role !== "ADMIN") redirect("/dashboard");
-
   const denverNow = new Date(
     new Date().toLocaleString("en-US", { timeZone: "America/Denver" }),
   );
