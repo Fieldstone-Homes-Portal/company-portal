@@ -116,7 +116,8 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
           </p>
         )}
         {mainNav.map((item) => {
-          const active = pathname.startsWith(item.href);
+          const active =
+            pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
@@ -143,7 +144,8 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
             )}
             {collapsed && <div className="my-4 border-t border-white/10" />}
             {managerNav.map((item) => {
-              const active = pathname.startsWith(item.href);
+              const active =
+            pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.href}
@@ -161,7 +163,8 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
               );
             })}
             {isAdmin && adminNav.map((item) => {
-              const active = pathname.startsWith(item.href);
+              const active =
+            pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.href}
