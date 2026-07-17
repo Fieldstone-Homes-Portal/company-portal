@@ -8,8 +8,6 @@ import { getCalendarMonth } from "@/lib/companyCalendar";
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) return new Response(null, { status: 401 });
-  // The Home calendar is admin-only for now; keep its data endpoint in step.
-  if (session.user.role !== "ADMIN") return new Response(null, { status: 403 });
 
   const month = new URL(request.url).searchParams.get("month") ?? "";
   const m = /^(\d{4})-(\d{2})$/.exec(month);

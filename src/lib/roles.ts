@@ -21,14 +21,6 @@ export function getRoleLabel(role: Role): string {
 
 export const ALL_ROLES: Role[] = ["EMPLOYEE", "MANAGER", "ADMIN"];
 
-/**
- * Where a user lands after sign-in. The new Home page is admin-only for now
- * (soft launch), so everyone else continues to land on the Toolbox.
- */
-export function landingPath(role: Role): string {
-  return role === "ADMIN" ? "/home" : "/dashboard";
-}
-
 /* ------------------------------------------------------------------------- */
 /*  Access gating: role + department                                         */
 /* ------------------------------------------------------------------------- */
