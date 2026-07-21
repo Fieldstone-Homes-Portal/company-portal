@@ -15,6 +15,7 @@ import {
   Boxes,
   Building2,
   Shield,
+  FlaskConical,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -48,6 +49,9 @@ const managerNav = [
 const adminNav = [
   { label: "App Access", href: "/admin/access", icon: Shield },
   { label: "Departments", href: "/admin/departments", icon: Building2 },
+  // Prototype of the drag-and-drop access manager — sandbox only, never
+  // writes to the database. Remove once the real thing replaces it.
+  { label: "Access Studio", href: "/admin/access-studio", icon: FlaskConical },
 ];
 
 export default function Sidebar({ role, footerSlot }: SidebarProps) {
