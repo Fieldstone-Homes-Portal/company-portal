@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Maximize2, Minimize2 } from "lucide-react";
+import StageBadge from "@/components/StageBadge";
 import { trackOpen } from "@/components/TrackedLink";
 import { useUsageHeartbeat } from "@/lib/useUsageHeartbeat";
 
@@ -10,9 +11,11 @@ interface AppEmbedProps {
   name: string;
   iframeSrc: string;
   appId: string;
+  /** Lifecycle stage — shows a maturity badge next to the app name. */
+  stage?: string;
 }
 
-export default function AppEmbed({ name, iframeSrc, appId }: AppEmbedProps) {
+export default function AppEmbed({ name, iframeSrc, appId, stage = "DEPLOYED" }: AppEmbedProps) {
   const [fullscreen, setFullscreen] = useState(false);
 
   // Record the open once, when the app actually renders (not on prefetch), so
@@ -30,9 +33,12 @@ export default function AppEmbed({ name, iframeSrc, appId }: AppEmbedProps) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-white">
         <div className="flex items-center justify-between border-b border-fs-warm-gray bg-white px-4 py-2">
-          <h1 className="font-display text-sm font-bold text-fs-espresso">
-            {name}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-sm font-bold text-fs-espresso">
+              {name}
+            </h1>
+            <StageBadge stage={stage} />
+          </div>
           <button
             onClick={() => setFullscreen(false)}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-fs-copper transition-colors hover:bg-fs-warm-gray hover:text-fs-espresso"
@@ -66,6 +72,7 @@ export default function AppEmbed({ name, iframeSrc, appId }: AppEmbedProps) {
           <h1 className="font-display text-sm font-bold text-fs-espresso">
             {name}
           </h1>
+          <StageBadge stage={stage} />
         </div>
         <button
           onClick={() => setFullscreen(true)}

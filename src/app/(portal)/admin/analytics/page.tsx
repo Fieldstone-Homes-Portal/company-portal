@@ -103,6 +103,7 @@ export default async function AdminAnalyticsPage({ searchParams }: Props) {
                 month: "long",
                 day: "numeric",
                 year: "numeric",
+                timeZone: "America/Denver",
               })}{" "}
               — earlier opens weren&apos;t recorded.
             </>

@@ -13,6 +13,20 @@ enum Role {
   ADMIN
 }
 
+// Lifecycle stage of a portal app — a pipeline from first commit to fully
+// released. Purely informational: it changes what badge users see on the
+// app's tile, never who can access it (that stays role + departments).
+//   IN_DEV     → actively being built; expect changes and rough edges
+//   VALIDATION → feature-complete, being tested/validated with a pilot group
+//   MVP        → early access; core features work, more coming
+//   DEPLOYED   → fully released and supported (default; no badge shown)
+enum AppStage {
+  IN_DEV
+  VALIDATION
+  MVP
+  DEPLOYED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -90,13 +104,47 @@ model PortalApp {
   sortOrder   Int      @default(0)
   isActive    Boolean  @default(true)
   openIn      String   @default("iframe")
+  // Lifecycle stage (see the AppStage enum above). Informational only —
+  // surfaced as a badge on tiles; existing apps default to DEPLOYED.
+  stage       AppStage @default(DEPLOYED)
   // Many-to-many: an app can be restricted to specific departments.
   //   Empty list  → no department restriction (anyone with the right role)
   //   Non-empty   → non-admins need to be in at least one of these depts
   //                 (only ADMINs bypass — see lib/roles.ts)
   departments Department[] @relation("AppDepartments")
+  // "What's New" entries about this app (see ReleaseNote below).
+  releaseNotes ReleaseNote[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ReleaseNote: a "What's New" entry shown on the Home page and /whats-new.
+// Created automatically when a manager registers a new app in Manage Apps
+// (kind = "new-app"), or written by hand in /admin/releases (kind = "update").
+//
+//   appId    → optional link to a PortalApp. When set, the user-facing card
+//              shows an "Open app →" link — but ONLY if the viewer passes
+//              canAccessApp for that app (see lib/releaseNotes.ts). Deleting
+//              the app keeps the note (appId nulls out) so history survives.
+//   body     → plain text, rendered with line breaks preserved.
+//   publishedAt → what the feed sorts by; notes dated in the future stay
+//              hidden from users until that time passes.
+//   createdBy → email of the manager/admin who created the note.
+model ReleaseNote {
+  id          String     @id @default(cuid())
+  appId       String?
+  app         PortalApp? @relation(fields: [appId], references: [id], onDelete: SetNull)
+  title       String
+  body        String?
+  // "new-app" → auto-seeded when the app was registered; "update" → manual.
+  // Free-form string so new kinds later don't need a migration.
+  kind        String     @default("update")
+  publishedAt DateTime   @default(now())
+  createdBy   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([publishedAt])
 }
 
 // Department: a unit of the company (Construction, Sales, Land, etc.).

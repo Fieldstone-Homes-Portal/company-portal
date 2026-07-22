@@ -2,12 +2,14 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import RecentlyOpenedSection from "@/components/home/RecentlyOpenedSection";
+import WhatsNewSection from "@/components/home/WhatsNewSection";
 import AllStaffSection from "@/components/home/AllStaffSection";
 import UpcomingSection from "@/components/home/UpcomingSection";
 import CalendarSection from "@/components/home/CalendarSection";
 import { getRecentOpens } from "@/lib/recentOpens";
 import { getLatestAllStaff, type AllStaffEmail } from "@/lib/allStaff";
 import { getUpcoming, getCalendarMonth } from "@/lib/companyCalendar";
+import { getWhatsNew } from "@/lib/releaseNotes";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -26,11 +28,17 @@ export default async function HomePage() {
   const month = denverNow.getMonth() + 1;
   const todayYmd = `${year}-${pad(month)}-${pad(denverNow.getDate())}`;
 
-  // All four sections load in parallel. All Staff and the calendar both hit
+  // SOFT LAUNCH: What's New is admin-only for now — same pattern the Home
+  // page itself used before opening up to everyone (PR #7 → #12). Drop this
+  // gate to release the section to all users.
+  const isAdmin = session.user.role === "ADMIN";
+
+  // All five sections load in parallel. All Staff and the calendar both hit
   // Microsoft Graph (cached); the calendar helpers swallow Graph errors and
   // still return holidays + anniversaries, so the page never breaks.
-  const [recents, allStaff, upcoming, monthData] = await Promise.all([
+  const [recents, whatsNew, allStaff, upcoming, monthData] = await Promise.all([
     getRecentOpens(session.user, 3),
+    isAdmin ? getWhatsNew(session.user, 4) : Promise.resolve([]),
     getLatestAllStaff(3)
       .then((emails) => ({ emails, error: null as string | null }))
       .catch((e) => ({
@@ -51,6 +59,7 @@ export default async function HomePage() {
 
       <div className="space-y-10">
         <RecentlyOpenedSection items={recents} />
+        <WhatsNewSection items={whatsNew} />
         <AllStaffSection emails={allStaff.emails} error={allStaff.error} />
         <UpcomingSection items={upcoming} />
         <CalendarSection initial={monthData} />

@@ -29,7 +29,7 @@ export interface AppUsageRow {
 }
 
 export interface DailyOpens {
-  /** YYYY-MM-DD (UTC day). */
+  /** YYYY-MM-DD (Mountain-time day — America/Denver). */
   day: string;
   opens: number;
 }
@@ -70,7 +70,7 @@ interface RawOpenRow {
 }
 
 interface RawDailyRow {
-  day: Date;
+  day: string;
   opens: bigint;
 }
 
@@ -95,9 +95,11 @@ export async function getAnalytics(windowDays: WindowDays): Promise<AnalyticsDat
         GROUP BY "kind", "targetId"
         ORDER BY COUNT(*) DESC
       `,
-      // Opens per UTC day.
+      // Opens per Mountain-time day (buckets match the company's clock,
+      // not UTC — otherwise evening opens land on tomorrow's bar).
       prisma.$queryRaw<RawDailyRow[]>`
-        SELECT date_trunc('day', "openedAt") AS "day", COUNT(*) AS "opens"
+        SELECT to_char("openedAt" AT TIME ZONE 'America/Denver', 'YYYY-MM-DD') AS "day",
+               COUNT(*) AS "opens"
         FROM "AppOpenEvent"
         WHERE "openedAt" >= ${since}
         GROUP BY 1
@@ -145,13 +147,16 @@ export async function getAnalytics(windowDays: WindowDays): Promise<AnalyticsDat
     };
   });
 
-  // Zero-fill days so the chart shows the whole window.
+  // Zero-fill days so the chart shows the whole window, anchored to
+  // today's date in Mountain time to match the SQL bucketing above.
   const opensByDay = new Map(
-    dailyRows.map((r) => [r.day.toISOString().slice(0, 10), Number(r.opens)]),
+    dailyRows.map((r) => [r.day, Number(r.opens)]),
   );
   const daily: DailyOpens[] = [];
-  const start = new Date();
-  start.setUTCHours(0, 0, 0, 0);
+  const todayDenver = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Denver",
+  }).format(new Date());
+  const start = new Date(`${todayDenver}T00:00:00Z`);
   start.setUTCDate(start.getUTCDate() - (windowDays - 1));
   for (let i = 0; i < windowDays; i++) {
     const d = new Date(start);

@@ -12,6 +12,8 @@ export interface RecentItem {
   icon: string | null;
   /** True for links (open in a new tab + record the re-open). */
   external: boolean;
+  /** Lifecycle stage (AppStage) for apps — drives the stage badge. Null for links. */
+  stage: string | null;
 }
 
 interface UserForRecents {
@@ -62,6 +64,9 @@ export async function getRecentOpens(
         label: app.name,
         icon: app.icon,
         external: false,
+        // SOFT LAUNCH: lifecycle-stage badges are admin-only for now. Drop
+        // this gate (always pass app.stage) when stages go live for everyone.
+        stage: user.role === "ADMIN" ? app.stage : null,
       });
     } else {
       if (!r.url) continue;
@@ -71,6 +76,7 @@ export async function getRecentOpens(
         label: r.label,
         icon: r.icon,
         external: true,
+        stage: null,
       });
     }
   }

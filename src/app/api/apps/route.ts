@@ -25,12 +25,29 @@ export async function POST(req: NextRequest) {
       section: body.section || "tool",
       sortOrder: body.sortOrder || 0,
       openIn: body.openIn || "iframe",
+      stage: body.stage || "DEPLOYED",
       departments: departmentIds.length
         ? { connect: departmentIds.map((id) => ({ id })) }
         : undefined,
     },
     include: { departments: { select: { id: true, name: true } } },
   });
+
+  // Auto-seed a "What's New" entry so new apps announce themselves on the
+  // Home page. Best-effort: a failure here must never break app creation.
+  try {
+    await prisma.releaseNote.create({
+      data: {
+        appId: app.id,
+        title: `New app: ${app.name}`,
+        body: app.description || null,
+        kind: "new-app",
+        createdBy: session.user.email || null,
+      },
+    });
+  } catch (err) {
+    console.error("Failed to seed release note for new app", app.id, err);
+  }
 
   return NextResponse.json(app);
 }
