@@ -8,9 +8,9 @@ import ReleaseNoteManager from "./ReleaseNoteManager";
 export default async function AdminReleasesPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  // Manager-level, matching Manage Apps — the people who register apps
-  // are the ones announcing updates about them.
-  if (!hasMinRole(session.user.role, "MANAGER")) redirect("/dashboard");
+  // SOFT LAUNCH: ADMIN-only for now (eventually manager-level to match
+  // Manage Apps — the people who register apps announce updates about them).
+  if (!hasMinRole(session.user.role, "ADMIN")) redirect("/dashboard");
 
   // All notes, including future-dated ones (those are hidden from the
   // user-facing feed until their publish time passes).

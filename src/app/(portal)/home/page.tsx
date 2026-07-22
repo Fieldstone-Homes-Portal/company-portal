@@ -28,12 +28,17 @@ export default async function HomePage() {
   const month = denverNow.getMonth() + 1;
   const todayYmd = `${year}-${pad(month)}-${pad(denverNow.getDate())}`;
 
+  // SOFT LAUNCH: What's New is admin-only for now — same pattern the Home
+  // page itself used before opening up to everyone (PR #7 → #12). Drop this
+  // gate to release the section to all users.
+  const isAdmin = session.user.role === "ADMIN";
+
   // All five sections load in parallel. All Staff and the calendar both hit
   // Microsoft Graph (cached); the calendar helpers swallow Graph errors and
   // still return holidays + anniversaries, so the page never breaks.
   const [recents, whatsNew, allStaff, upcoming, monthData] = await Promise.all([
     getRecentOpens(session.user, 3),
-    getWhatsNew(session.user, 4),
+    isAdmin ? getWhatsNew(session.user, 4) : Promise.resolve([]),
     getLatestAllStaff(3)
       .then((emails) => ({ emails, error: null as string | null }))
       .catch((e) => ({

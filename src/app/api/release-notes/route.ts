@@ -4,11 +4,13 @@ import { hasMinRole } from "@/lib/roles";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET — list ALL release notes (including future-dated ones) for the admin
-// manager UI. Manager-level, matching Manage Apps: the user-facing feed
-// doesn't use this route (it reads via lib/releaseNotes on the server).
+// manager UI. The user-facing feed doesn't use this route (it reads via
+// lib/releaseNotes on the server).
+// SOFT LAUNCH: ADMIN-only for now; loosen to MANAGER (matching Manage Apps)
+// when the feature opens up.
 export async function GET() {
   const session = await auth();
-  if (!session?.user || !hasMinRole(session.user.role, "MANAGER")) {
+  if (!session?.user || !hasMinRole(session.user.role, "ADMIN")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const notes = await prisma.releaseNote.findMany({
@@ -18,10 +20,10 @@ export async function GET() {
   return NextResponse.json(notes);
 }
 
-// POST — create a manual release note. Manager-level, matching Manage Apps.
+// POST — create a manual release note. SOFT LAUNCH: ADMIN-only for now.
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user || !hasMinRole(session.user.role, "MANAGER")) {
+  if (!session?.user || !hasMinRole(session.user.role, "ADMIN")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

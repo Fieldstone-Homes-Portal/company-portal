@@ -87,7 +87,12 @@ export default async function DashboardPage() {
                       category={app.category}
                       openIn={app.openIn}
                       departments={app.departments}
-                      isNew={isNewApp(app.createdAt)}
+                      // SOFT LAUNCH: "New" badge is admin-only for now —
+                      // remove the role check to show it to everyone.
+                      isNew={
+                        session.user.role === "ADMIN" &&
+                        isNewApp(app.createdAt)
+                      }
                     />
                   ))}
               </div>

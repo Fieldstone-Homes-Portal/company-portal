@@ -7,10 +7,11 @@ interface Context {
   params: Promise<{ id: string }>;
 }
 
-// PUT — edit a release note (title/body/app link/publish date). Manager-level.
+// PUT — edit a release note (title/body/app link/publish date).
+// SOFT LAUNCH: ADMIN-only for now.
 export async function PUT(req: NextRequest, context: Context) {
   const session = await auth();
-  if (!session?.user || !hasMinRole(session.user.role, "MANAGER")) {
+  if (!session?.user || !hasMinRole(session.user.role, "ADMIN")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -44,10 +45,10 @@ export async function PUT(req: NextRequest, context: Context) {
   return NextResponse.json(note);
 }
 
-// DELETE — remove a release note. Manager-level.
+// DELETE — remove a release note. SOFT LAUNCH: ADMIN-only for now.
 export async function DELETE(_req: NextRequest, context: Context) {
   const session = await auth();
-  if (!session?.user || !hasMinRole(session.user.role, "MANAGER")) {
+  if (!session?.user || !hasMinRole(session.user.role, "ADMIN")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
