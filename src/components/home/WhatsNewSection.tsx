@@ -56,12 +56,6 @@ export default function WhatsNewSection({ items }: { items: WhatsNewItem[] }) {
             What&apos;s new
           </h2>
         </div>
-        <Link
-          href="/whats-new"
-          className="text-xs font-semibold text-fs-copper hover:text-fs-espresso"
-        >
-          View all &rarr;
-        </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

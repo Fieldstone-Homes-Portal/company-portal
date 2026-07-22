@@ -16,7 +16,6 @@ import {
   Building2,
   Shield,
   FlaskConical,
-  Sparkles,
   Megaphone,
 } from "lucide-react";
 import { useState } from "react";
@@ -37,8 +36,6 @@ const employeeNav = [
   { label: "Toolbox", href: "/dashboard", icon: Boxes },
   { label: "Dashboards", href: "/dashboards", icon: LayoutDashboard },
   { label: "Links", href: "/links", icon: Link2 },
-  // Portal-wide announcements feed — new apps + notable updates.
-  { label: "What's New", href: "/whats-new", icon: Sparkles },
 ];
 
 // Manager-level admin links — visible to MANAGERs and ADMINs.
