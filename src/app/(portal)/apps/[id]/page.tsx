@@ -79,5 +79,14 @@ export default async function AppPage({ params }: Props) {
     iframeSrc += `${iframeSrc.includes("?") ? "&" : "?"}${params.toString()}`;
   }
 
-  return <AppEmbed name={app.name} iframeSrc={iframeSrc} appId={app.id} />;
+  return (
+    <AppEmbed
+      name={app.name}
+      iframeSrc={iframeSrc}
+      appId={app.id}
+      // SOFT LAUNCH: lifecycle-stage badges are admin-only for now. Drop
+      // this gate (pass app.stage unconditionally) when stages go live.
+      stage={session.user.role === "ADMIN" ? app.stage : undefined}
+    />
+  );
 }

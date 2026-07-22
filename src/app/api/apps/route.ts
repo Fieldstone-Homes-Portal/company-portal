@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       section: body.section || "tool",
       sortOrder: body.sortOrder || 0,
       openIn: body.openIn || "iframe",
+      stage: body.stage || "DEPLOYED",
       departments: departmentIds.length
         ? { connect: departmentIds.map((id) => ({ id })) }
         : undefined,

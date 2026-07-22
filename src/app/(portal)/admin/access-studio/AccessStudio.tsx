@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { appIcon } from "@/lib/appIcons";
+import { APP_STAGES, stageMeta } from "@/components/StageBadge";
 import { getRoleLabel } from "@/lib/roles";
 import type { Role } from "@prisma/client";
 
@@ -25,6 +26,7 @@ interface StudioApp {
   icon: string | null;
   section: string;
   minRole: string;
+  stage: string;
   deptIds: string[];
 }
 
@@ -117,9 +119,19 @@ export default function AccessStudio({
   }, [apps]);
 
   const [grants, setGrants] = useState<GrantMap>(seed);
-  const [history, setHistory] = useState<{ desc: string; before: GrantMap }[]>(
+  // Undo history holds generic revert actions so it can cover both sandbox
+  // grant changes (revert = restore prior client state) and live stage
+  // changes (revert = PATCH the previous stage back).
+  const [history, setHistory] = useState<{ desc: string; revert: () => void }[]>(
     [],
   );
+  // Lifecycle stage per app. UNLIKE grants, stage changes are REAL — each
+  // click PATCHes /api/apps/[id]/stage and persists for everyone. Stage is
+  // informational only (a maturity badge), so saving it live is safe.
+  const [stages, setStages] = useState<Record<string, string>>(() =>
+    Object.fromEntries(apps.map((a) => [a.id, a.stage])),
+  );
+  const [savingStage, setSavingStage] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; undoable: boolean } | null>(
     null,
   );
@@ -163,7 +175,11 @@ export default function AccessStudio({
   }
 
   function mutate(desc: string, next: GrantMap) {
-    setHistory((h) => [...h.slice(-49), { desc, before: grants }]);
+    const before = grants;
+    setHistory((h) => [
+      ...h.slice(-49),
+      { desc, revert: () => setGrants(before) },
+    ]);
     setGrants(next);
     setToast({ msg: desc, undoable: true });
   }
@@ -172,8 +188,48 @@ export default function AccessStudio({
     const last = history[history.length - 1];
     if (!last) return;
     setHistory((h) => h.slice(0, -1));
-    setGrants(last.before);
+    last.revert();
     setToast({ msg: `Undid: ${last.desc}`, undoable: false });
+  }
+
+  /* --------------------------- lifecycle stage --------------------------- */
+
+  async function persistStage(appId: string, stage: string): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/apps/${appId}/stage`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function changeStage(app: StudioApp, next: string) {
+    const prev = stages[app.id];
+    if (prev === next || savingStage) return;
+    setSavingStage(app.id);
+    const ok = await persistStage(app.id, next);
+    setSavingStage(null);
+    if (!ok) return info(`Couldn't save ${app.name}'s stage — try again.`);
+    setStages((s) => ({ ...s, [app.id]: next }));
+    const desc = `Moved ${app.name} to ${stageMeta(next).label} — saved for everyone`;
+    setHistory((h) => [
+      ...h.slice(-49),
+      {
+        desc,
+        // Undo re-PATCHes the previous stage (this was a real write).
+        revert: () => {
+          void persistStage(app.id, prev).then((restored) => {
+            if (restored) setStages((s) => ({ ...s, [app.id]: prev }));
+            else info(`Couldn't restore ${app.name}'s stage — try again.`);
+          });
+        },
+      },
+    ]);
+    setToast({ msg: desc, undoable: true });
   }
 
   /** Who can open this app under the sandbox rules, and why. */
@@ -441,6 +497,52 @@ export default function AccessStudio({
                         >
                           <Pencil size={13} />
                         </button>
+                      </div>
+                      {/* Lifecycle pipeline — unlike the sandboxed grants
+                          below, clicking a stage SAVES IMMEDIATELY. */}
+                      <div
+                        className="mt-2 flex items-center justify-between gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div
+                          className={`flex items-center ${
+                            savingStage === app.id ? "opacity-50" : ""
+                          }`}
+                        >
+                          {APP_STAGES.map((s, i) => {
+                            const StageIcon = s.icon;
+                            const active = stages[app.id] === s.value;
+                            return (
+                              <span key={s.value} className="flex items-center">
+                                {i > 0 && (
+                                  <span className="h-px w-2 bg-fs-warm-gray" />
+                                )}
+                                <button
+                                  onClick={() => changeStage(app, s.value)}
+                                  disabled={savingStage === app.id}
+                                  title={`${s.label}: ${s.description}${
+                                    active
+                                      ? " (current stage)"
+                                      : " — click to move here. Saves immediately."
+                                  }`}
+                                  className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
+                                    active
+                                      ? s.badge
+                                      : "text-fs-sage hover:bg-fs-warm-white hover:text-fs-copper"
+                                  }`}
+                                >
+                                  <StageIcon size={12} />
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <span
+                          title="Lifecycle stage is informational (a maturity badge on tiles) and saves immediately — unlike the access grants below, which are sandbox-only."
+                          className="truncate text-[9px] font-semibold uppercase tracking-wider text-fs-copper-light"
+                        >
+                          {stageMeta(stages[app.id]).label} · live
+                        </span>
                       </div>
                       <p className="mt-1.5 line-clamp-2 min-h-[2rem] text-xs text-fs-copper">
                         {app.description || " "}
@@ -739,6 +841,10 @@ export default function AccessStudio({
           individual grant
         </span>
         <span>Click the person-count on a card to see everyone it resolves to.</span>
+        <span className="font-semibold">
+          The stage pipeline on each card saves immediately — it&apos;s the one
+          control here that isn&apos;t sandboxed.
+        </span>
       </div>
 
       {/* ------------------------- person inspector ------------------------- */}
