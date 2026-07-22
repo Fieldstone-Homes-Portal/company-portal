@@ -46,6 +46,9 @@
   --color-success: #2d6a4f;
   --color-warning: #b45309;
   --color-danger: #991b1b;
+  /* Muted steel blue — informational accents (e.g. the Validation stage
+     badge). Deliberately desaturated so it sits well with the warm palette. */
+  --color-info: #35618a;
 
   --font-sans: "Montserrat", system-ui, sans-serif;
   --font-display: "Cormorant Garamond", Georgia, serif;

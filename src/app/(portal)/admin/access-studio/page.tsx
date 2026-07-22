@@ -66,6 +66,7 @@ export default async function AccessStudioPage() {
           icon: a.icon,
           section: a.section,
           minRole: a.minRole,
+          stage: a.stage,
           deptIds: a.departments.map((d) => d.id),
         }))}
         departments={departments.map((d) => ({

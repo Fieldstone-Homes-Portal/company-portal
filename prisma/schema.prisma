@@ -13,6 +13,20 @@ enum Role {
   ADMIN
 }
 
+// Lifecycle stage of a portal app — a pipeline from first commit to fully
+// released. Purely informational: it changes what badge users see on the
+// app's tile, never who can access it (that stays role + departments).
+//   IN_DEV     → actively being built; expect changes and rough edges
+//   VALIDATION → feature-complete, being tested/validated with a pilot group
+//   MVP        → early access; core features work, more coming
+//   DEPLOYED   → fully released and supported (default; no badge shown)
+enum AppStage {
+  IN_DEV
+  VALIDATION
+  MVP
+  DEPLOYED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -86,6 +100,9 @@ model PortalApp {
   sortOrder   Int      @default(0)
   isActive    Boolean  @default(true)
   openIn      String   @default("iframe")
+  // Lifecycle stage (see the AppStage enum above). Informational only —
+  // surfaced as a badge on tiles; existing apps default to DEPLOYED.
+  stage       AppStage @default(DEPLOYED)
   // Many-to-many: an app can be restricted to specific departments.
   //   Empty list  → no department restriction (anyone with the right role)
   //   Non-empty   → non-admins need to be in at least one of these depts

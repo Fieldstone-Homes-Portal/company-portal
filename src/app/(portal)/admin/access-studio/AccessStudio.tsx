@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { appIcon } from "@/lib/appIcons";
+import StageBadge from "@/components/StageBadge";
 import { getRoleLabel } from "@/lib/roles";
 import type { Role } from "@prisma/client";
 
@@ -25,6 +26,7 @@ interface StudioApp {
   icon: string | null;
   section: string;
   minRole: string;
+  stage: string;
   deptIds: string[];
 }
 
@@ -442,6 +444,8 @@ export default function AccessStudio({
                           <Pencil size={13} />
                         </button>
                       </div>
+                      {/* Lifecycle stage — informational; DEPLOYED stays quiet */}
+                      <StageBadge stage={app.stage} className="mt-1.5" />
                       <p className="mt-1.5 line-clamp-2 min-h-[2rem] text-xs text-fs-copper">
                         {app.description || " "}
                       </p>

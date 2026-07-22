@@ -69,6 +69,7 @@ export default async function DashboardsPage() {
                       url={app.url}
                       category={app.category}
                       openIn={app.openIn}
+                      stage={app.stage}
                       departments={app.departments}
                     />
                   ))}

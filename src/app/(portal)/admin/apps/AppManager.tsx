@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, X, Check, Power, PowerOff } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, Power, PowerOff, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import DepartmentMultiSelect from "@/components/DepartmentMultiSelect";
+import StageBadge, { APP_STAGES, stageMeta } from "@/components/StageBadge";
 
 interface Department {
   id: string;
@@ -22,6 +23,7 @@ interface App {
   sortOrder: number;
   isActive: boolean;
   openIn: string;
+  stage: string;
   departments?: Department[];
 }
 
@@ -66,6 +68,7 @@ export default function AppManager({
     section: "tool",
     sortOrder: 0,
     openIn: "iframe",
+    stage: "DEPLOYED",
     departmentIds: [] as string[],
   };
   const [form, setForm] = useState(blankForm);
@@ -87,6 +90,7 @@ export default function AppManager({
       section: app.section || "tool",
       sortOrder: app.sortOrder,
       openIn: app.openIn,
+      stage: app.stage || "DEPLOYED",
       departmentIds: (app.departments || []).map((d) => d.id),
     });
     setEditing(app.id);
@@ -295,6 +299,40 @@ export default function AppManager({
             </div>
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium text-fs-copper">
+                Lifecycle stage <span className="text-fs-copper-light">— shows a maturity badge on the tile; doesn&apos;t affect access</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-fs-warm-gray bg-fs-warm-white p-2">
+                {APP_STAGES.map((s, i) => {
+                  const StageIcon = s.icon;
+                  const active = form.stage === s.value;
+                  return (
+                    <span key={s.value} className="flex items-center gap-1.5">
+                      {i > 0 && (
+                        <ChevronRight size={12} className="text-fs-copper-light" />
+                      )}
+                      <button
+                        type="button"
+                        title={s.description}
+                        onClick={() => setForm({ ...form, stage: s.value })}
+                        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          active
+                            ? "bg-fs-espresso text-white"
+                            : "text-fs-copper hover:bg-white"
+                        }`}
+                      >
+                        <StageIcon size={12} />
+                        {s.label}
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+              <p className="mt-1.5 text-xs text-fs-copper-light">
+                {stageMeta(form.stage).description}
+              </p>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-fs-copper">
                 Department restriction <span className="text-fs-copper-light">— leave empty for no restriction</span>
               </label>
               <DepartmentMultiSelect
@@ -349,6 +387,7 @@ export default function AppManager({
                 <span className="rounded-full bg-fs-espresso/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fs-espresso">
                   {app.section === "dashboard" ? "Dashboards" : "Toolbox"}
                 </span>
+                <StageBadge stage={app.stage} showDeployed />
                 {!app.isActive && (
                   <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">
                     Disabled
