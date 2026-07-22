@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Maximize2, Minimize2 } from "lucide-react";
 import StageBadge from "@/components/StageBadge";
 import { trackOpen } from "@/components/TrackedLink";
+import { useUsageHeartbeat } from "@/lib/useUsageHeartbeat";
 
 interface AppEmbedProps {
   name: string;
@@ -22,6 +23,11 @@ export default function AppEmbed({ name, iframeSrc, appId, stage = "DEPLOYED" }:
   useEffect(() => {
     trackOpen("app", appId);
   }, [appId]);
+
+  // Time-on-app analytics: minute-level heartbeats while this embed is
+  // visible (see /admin/analytics). App-level only — the iframe's contents
+  // are never observed.
+  useUsageHeartbeat(appId);
 
   if (fullscreen) {
     return (
