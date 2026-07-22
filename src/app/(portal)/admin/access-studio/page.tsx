@@ -50,11 +50,15 @@ export default async function AccessStudioPage() {
         <p>
           <span className="font-semibold">Prototype sandbox.</span> Everything
           here starts from today&apos;s real apps, departments, and people, but
-          your changes live only on this page — nothing is saved, and{" "}
+          access changes live only on this page — nothing is saved, and{" "}
           <span className="font-semibold">
             real access is never affected
           </span>
-          . Reload to start over.
+          . Reload to start over. One exception:{" "}
+          <span className="font-semibold">
+            the lifecycle stage pipeline on each app card saves immediately
+          </span>{" "}
+          (stage is informational only — it never changes who has access).
         </p>
       </div>
 
