@@ -7,7 +7,7 @@ import PageHeader from "@/components/PageHeader";
 export default async function AdminSettingsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (!hasMinRole(session.user.role, "MANAGER")) redirect("/dashboard");
+  if (!hasMinRole(session.user.role, "ADMIN")) redirect("/dashboard");
 
   return (
     <div className="mx-auto max-w-4xl">

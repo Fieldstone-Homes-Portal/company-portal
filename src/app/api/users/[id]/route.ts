@@ -9,7 +9,7 @@ interface Context {
 
 export async function PUT(req: NextRequest, context: Context) {
   const session = await auth();
-  if (!session?.user || !hasMinRole(session.user.role, "MANAGER")) {
+  if (!session?.user || !hasMinRole(session.user.role, "ADMIN")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

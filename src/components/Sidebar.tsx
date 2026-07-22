@@ -39,7 +39,7 @@ const employeeNav = [
   { label: "Links", href: "/links", icon: Link2 },
 ];
 
-// Manager-level admin links — visible to MANAGERs and ADMINs.
+// Management links — ADMIN-only, like everything under /admin.
 const managerNav = [
   { label: "Manage Apps", href: "/admin/apps", icon: AppWindow },
   { label: "Manage Users", href: "/admin/users", icon: Users },
@@ -64,8 +64,9 @@ const adminNav = [
 export default function Sidebar({ role, footerSlot }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const isManager = role === "MANAGER" || role === "ADMIN";
   const isAdmin = role === "ADMIN";
+  // The entire Management section is admin-only.
+  const isManager = isAdmin;
 
   return (
     <aside

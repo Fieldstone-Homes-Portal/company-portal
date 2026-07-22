@@ -8,7 +8,7 @@ import PageHeader from "@/components/PageHeader";
 export default async function AdminUsersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (!hasMinRole(session.user.role, "MANAGER")) redirect("/dashboard");
+  if (!hasMinRole(session.user.role, "ADMIN")) redirect("/dashboard");
 
   const users = await prisma.user.findMany({
     select: {
