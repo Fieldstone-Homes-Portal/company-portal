@@ -16,6 +16,7 @@ import {
   Building2,
   Shield,
   FlaskConical,
+  Megaphone,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -47,6 +48,10 @@ const managerNav = [
 // Admin-only links — visible to ADMINs only. Departments live here
 // because they affect access for everyone in the org.
 const adminNav = [
+  // Write/edit the "What's New" announcements (auto-seeded on new apps).
+  // SOFT LAUNCH: lives in the admin group while the feature is admin-only;
+  // move back to managerNav when it opens up to managers.
+  { label: "Release Notes", href: "/admin/releases", icon: Megaphone },
   { label: "App Access", href: "/admin/access", icon: Shield },
   { label: "Departments", href: "/admin/departments", icon: Building2 },
   // Prototype of the drag-and-drop access manager — sandbox only, never
