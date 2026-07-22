@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { appIcon } from "@/lib/appIcons";
-import StageBadge from "@/components/StageBadge";
+import StageBadge, { stageMeta } from "@/components/StageBadge";
 
 interface AppTileProps {
   id: string;
@@ -36,9 +36,15 @@ export default function AppTile({
 }: AppTileProps) {
   const Icon = appIcon(icon);
   const restricted = departments.length > 0;
+  // Stage-colored accent bar across the top of the tile — a not-yet-deployed
+  // flag that reads at a glance. DEPLOYED has no bar (mature is the norm).
+  const stageBar = stageMeta(stage).bar;
 
   const content = (
-    <div className="group flex flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-fs-warm-gray transition-all hover:shadow-md hover:ring-fs-copper/30">
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-fs-warm-gray transition-all hover:shadow-md hover:ring-fs-copper/30">
+      {stageBar && (
+        <div className={`absolute inset-x-0 top-0 h-1 ${stageBar}`} />
+      )}
       <div className="mb-4 flex items-start justify-between">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-fs-warm-white text-fs-copper transition-colors group-hover:bg-fs-espresso group-hover:text-white">
           <Icon size={24} />

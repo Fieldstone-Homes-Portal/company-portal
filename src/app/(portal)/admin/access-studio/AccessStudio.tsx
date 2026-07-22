@@ -469,22 +469,14 @@ export default function AccessStudio({
                     }`}
                   >
                     <div className="border-b border-fs-warm-gray px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-start gap-2">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-fs-warm-white text-fs-copper">
                           <Icon size={16} />
                         </div>
-                        <h3 className="min-w-0 flex-1 truncate font-display font-bold text-fs-espresso">
+                        {/* Full name, wrapping as needed — never truncated. */}
+                        <h3 className="min-w-0 flex-1 font-display font-bold leading-snug text-fs-espresso">
                           {app.name}
                         </h3>
-                        {app.minRole !== "EMPLOYEE" && (
-                          <span
-                            title="Legacy role gate — not modeled in this prototype"
-                            className="flex items-center gap-1 rounded-full bg-fs-copper/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fs-copper"
-                          >
-                            <Shield size={9} />
-                            {app.minRole.toLowerCase()}+
-                          </span>
-                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -498,6 +490,17 @@ export default function AccessStudio({
                           <Pencil size={13} />
                         </button>
                       </div>
+                      {/* Legacy role gate on its own line so the title above
+                          keeps the full card width. */}
+                      {app.minRole !== "EMPLOYEE" && (
+                        <span
+                          title="Legacy role gate — not modeled in this prototype"
+                          className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-fs-copper/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fs-copper"
+                        >
+                          <Shield size={9} />
+                          {app.minRole.toLowerCase()}+
+                        </span>
+                      )}
                       {/* Lifecycle pipeline — unlike the sandboxed grants
                           below, clicking a stage SAVES IMMEDIATELY. */}
                       <div
