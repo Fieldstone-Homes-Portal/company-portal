@@ -8,7 +8,7 @@ import PageHeader from "@/components/PageHeader";
 export default async function AdminAppsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (!hasMinRole(session.user.role, "MANAGER")) redirect("/dashboard");
+  if (!hasMinRole(session.user.role, "ADMIN")) redirect("/dashboard");
 
   // Load apps with their current department assignments so the form can
   // pre-fill the multi-select when editing.

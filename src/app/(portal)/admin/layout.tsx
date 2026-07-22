@@ -9,8 +9,8 @@ export default async function AdminLayout({
   const session = await auth();
   if (!session) redirect("/login");
 
-  const role = session.user?.role;
-  if (role !== "MANAGER" && role !== "ADMIN") {
+  // Everything under /admin is admin-only.
+  if (session.user?.role !== "ADMIN") {
     redirect("/dashboard");
   }
 

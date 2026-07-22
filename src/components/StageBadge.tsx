@@ -15,6 +15,11 @@ export interface StageMeta {
   icon: LucideIcon;
   /** Tailwind classes for the badge chip (bg + text + border). */
   badge: string;
+  /**
+   * Tailwind bg class for the accent bar across the top of app tiles.
+   * Empty for DEPLOYED — mature apps get no bar.
+   */
+  bar: string;
 }
 
 export const APP_STAGES: StageMeta[] = [
@@ -26,6 +31,7 @@ export const APP_STAGES: StageMeta[] = [
     icon: Hammer,
     // Dashed amber border for an under-construction feel.
     badge: "border border-dashed border-warning/50 bg-warning/10 text-warning",
+    bar: "bg-warning",
   },
   {
     value: "VALIDATION",
@@ -34,6 +40,7 @@ export const APP_STAGES: StageMeta[] = [
       "In testing — feature-complete and being validated with a pilot group. Feedback welcome.",
     icon: FlaskConical,
     badge: "border border-info/30 bg-info/10 text-info",
+    bar: "bg-info",
   },
   {
     value: "MVP",
@@ -42,6 +49,7 @@ export const APP_STAGES: StageMeta[] = [
       "MVP / early access — the core features work and are safe to rely on; more is on the way.",
     icon: Rocket,
     badge: "border border-success/30 bg-success/10 text-success",
+    bar: "bg-success",
   },
   {
     value: "DEPLOYED",
@@ -50,6 +58,7 @@ export const APP_STAGES: StageMeta[] = [
     icon: CircleCheck,
     // Deliberately quiet — deployed is the norm, not news.
     badge: "border border-fs-warm-gray bg-fs-warm-white text-fs-copper-light",
+    bar: "",
   },
 ];
 
