@@ -16,6 +16,7 @@ import {
   Building2,
   Shield,
   FlaskConical,
+  BarChart3,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -47,6 +48,7 @@ const managerNav = [
 // Admin-only links — visible to ADMINs only. Departments live here
 // because they affect access for everyone in the org.
 const adminNav = [
+  { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "App Access", href: "/admin/access", icon: Shield },
   { label: "Departments", href: "/admin/departments", icon: Building2 },
   // Prototype of the drag-and-drop access manager — sandbox only, never

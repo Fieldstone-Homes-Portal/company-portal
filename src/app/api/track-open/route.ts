@@ -17,6 +17,11 @@ import { findCompanyLink } from "@/lib/companyLinks";
  * entries into their own history. Returns 204 on success or when the target is
  * unknown/inaccessible (tracking is best-effort and must never surface an error
  * to the user's click).
+ *
+ * Besides the RecentOpen upsert (which keeps only each user's LATEST open per
+ * target), every valid open also appends a row to AppOpenEvent — the
+ * append-only log behind /admin/analytics. App-level only: which app/link,
+ * which user, when. Nothing about activity inside the app is recorded.
  */
 export async function POST(request: Request) {
   const session = await auth();
@@ -62,13 +67,20 @@ export async function POST(request: Request) {
     url = link.url;
   }
 
-  await prisma.recentOpen.upsert({
-    where: {
-      userId_kind_targetId: { userId: session.user.id, kind, targetId },
-    },
-    update: { openedAt: new Date(), label, icon, url },
-    create: { userId: session.user.id, kind, targetId, label, icon, url },
-  });
+  await prisma.$transaction([
+    // Recents: one row per (user, kind, target) — unchanged behavior.
+    prisma.recentOpen.upsert({
+      where: {
+        userId_kind_targetId: { userId: session.user.id, kind, targetId },
+      },
+      update: { openedAt: new Date(), label, icon, url },
+      create: { userId: session.user.id, kind, targetId, label, icon, url },
+    }),
+    // Analytics: append-only — every open is a new row.
+    prisma.appOpenEvent.create({
+      data: { userId: session.user.id, kind, targetId, label },
+    }),
+  ]);
 
   return new Response(null, { status: 204 });
 }

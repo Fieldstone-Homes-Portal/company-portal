@@ -31,6 +31,10 @@ model User {
   departments   Department[] @relation("UserDepartments")
   // Per-user "recently opened" history powering the Home page.
   recentOpens   RecentOpen[]
+  // Append-only analytics events + usage sessions (see AppOpenEvent /
+  // AppUsageSession below). Powers /admin/analytics.
+  openEvents    AppOpenEvent[]
+  usageSessions AppUsageSession[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -144,4 +148,58 @@ model RecentOpen {
 
   @@unique([userId, kind, targetId])
   @@index([userId, openedAt])
+}
+
+// AppOpenEvent: append-only log of every open, powering /admin/analytics.
+// Unlike RecentOpen (which upserts — one row per user+target, so history is
+// lost), every open inserts a new row here. Written by the same
+// /api/track-open request that bumps RecentOpen.
+//
+// Privacy: app-level only. We record WHO opened WHICH app/link and WHEN —
+// never URLs inside an app, page views within it, or anything the user did
+// there.
+//
+//   kind = "app"  → targetId = PortalApp.id
+//   kind = "link" → targetId = the company link's URL
+// `label` is denormalized (name at open time) so analytics can still show
+// something meaningful for apps that are later deleted.
+model AppOpenEvent {
+  id       String   @id @default(cuid())
+  userId   String
+  kind     String
+  targetId String
+  label    String
+  openedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([openedAt])
+  @@index([kind, targetId, openedAt])
+}
+
+// AppUsageSession: lightweight time-on-app tracking for embedded apps.
+// AppEmbed generates a random sessionKey on mount and sends a heartbeat to
+// /api/track-usage every 60s while the tab is visible (plus a final beacon on
+// hide/close). Each heartbeat adds the elapsed time since the previous one to
+// `activeSeconds`, capped server-side so hidden/suspended gaps never count.
+// One row per embed session; analytics sums activeSeconds per app.
+//
+// Only iframe-embedded apps are timed — external links open in a new tab we
+// can't (and shouldn't) observe. Same privacy stance as AppOpenEvent:
+// app-level only, no in-app activity of any kind.
+model AppUsageSession {
+  id            String   @id @default(cuid())
+  // Client-generated random key identifying one continuous embed session.
+  // Unique so heartbeats can upsert; always validated against userId.
+  sessionKey    String   @unique
+  userId        String
+  kind          String
+  targetId      String
+  startedAt     DateTime @default(now())
+  lastSeenAt    DateTime @default(now())
+  // Accumulated visible time in seconds (sum of capped heartbeat deltas).
+  activeSeconds Int      @default(0)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([startedAt])
+  @@index([kind, targetId, startedAt])
 }
