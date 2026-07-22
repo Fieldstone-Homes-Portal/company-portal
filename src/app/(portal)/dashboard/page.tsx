@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessApp } from "@/lib/roles";
+import { isNewApp } from "@/lib/releaseNotes";
 import { redirect } from "next/navigation";
 import AppTile from "@/components/AppTile";
 import PageHeader from "@/components/PageHeader";
@@ -86,6 +87,7 @@ export default async function DashboardPage() {
                       category={app.category}
                       openIn={app.openIn}
                       departments={app.departments}
+                      isNew={isNewApp(app.createdAt)}
                     />
                   ))}
               </div>
