@@ -64,7 +64,9 @@ export async function getRecentOpens(
         label: app.name,
         icon: app.icon,
         external: false,
-        stage: app.stage,
+        // SOFT LAUNCH: lifecycle-stage badges are admin-only for now. Drop
+        // this gate (always pass app.stage) when stages go live for everyone.
+        stage: user.role === "ADMIN" ? app.stage : null,
       });
     } else {
       if (!r.url) continue;
