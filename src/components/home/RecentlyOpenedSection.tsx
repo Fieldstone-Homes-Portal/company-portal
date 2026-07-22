@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, ExternalLink, Clock } from "lucide-react";
 import { appIcon } from "@/lib/appIcons";
+import StageBadge from "@/components/StageBadge";
 import TrackedLink from "@/components/TrackedLink";
 import type { RecentItem } from "@/lib/recentOpens";
 
@@ -15,9 +16,12 @@ function CardInner({ item }: { item: RecentItem }) {
         <p className="truncate text-sm font-semibold text-fs-espresso group-hover:text-fs-copper">
           {item.label}
         </p>
-        <p className="text-xs text-fs-copper-light">
-          {item.external ? "Link" : "Tool"}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-xs text-fs-copper-light">
+            {item.external ? "Link" : "Tool"}
+          </p>
+          {item.stage && <StageBadge stage={item.stage} />}
+        </div>
       </div>
       {item.external ? (
         <ExternalLink size={14} className="shrink-0 text-fs-copper-light opacity-0 transition-opacity group-hover:opacity-100" />

@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, X, Check, Power, PowerOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import DepartmentMultiSelect from "@/components/DepartmentMultiSelect";
+// Stage is read-only here (the chip on each row). Editing the lifecycle
+// stage lives in Access Studio — the pipeline control on each app card.
+import StageBadge from "@/components/StageBadge";
 
 interface Department {
   id: string;
@@ -22,6 +25,7 @@ interface App {
   sortOrder: number;
   isActive: boolean;
   openIn: string;
+  stage: string;
   departments?: Department[];
 }
 
@@ -349,6 +353,7 @@ export default function AppManager({
                 <span className="rounded-full bg-fs-espresso/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fs-espresso">
                   {app.section === "dashboard" ? "Dashboards" : "Toolbox"}
                 </span>
+                <StageBadge stage={app.stage} showDeployed />
                 {!app.isActive && (
                   <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">
                     Disabled
