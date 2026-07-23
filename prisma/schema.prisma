@@ -15,7 +15,7 @@ enum Role {
 
 // Lifecycle stage of a portal app — a pipeline from first commit to fully
 // released. Purely informational: it changes what badge users see on the
-// app's tile, never who can access it (that stays role + departments).
+// app's tile, never who can access it (that's allStaff/departments/grants).
 //   IN_DEV     → actively being built; expect changes and rough edges
 //   VALIDATION → feature-complete, being tested/validated with a pilot group
 //   MVP        → early access; core features work, more coming
@@ -40,9 +40,12 @@ model User {
   accounts      Account[]
   sessions      Session[]
   // Many-to-many: a user can belong to multiple departments.
-  // Used by access-gating: non-admins need to be in at least one of an
-  // app's restricted departments to access it. Only ADMINs bypass.
+  // Used by access-gating: department grants on an app admit all of that
+  // department's members. Only ADMINs bypass gating entirely.
   departments   Department[] @relation("UserDepartments")
+  // Individual app grants (see AppGrant) — per-person access exceptions
+  // managed by drag-and-drop in Access Studio.
+  appGrants     AppGrant[]
   // Per-user "recently opened" history powering the Home page.
   recentOpens   RecentOpen[]
   // Append-only analytics events + usage sessions (see AppOpenEvent /
@@ -93,7 +96,6 @@ model PortalApp {
   description String?
   icon        String?
   url         String
-  minRole     Role     @default(EMPLOYEE)
   category    String   @default("general")
   // Which area of the portal this app shows up in.
   //   "tool"      → Toolbox page (apps grid at /dashboard) — DEFAULT
@@ -107,11 +109,16 @@ model PortalApp {
   // Lifecycle stage (see the AppStage enum above). Informational only —
   // surfaced as a badge on tiles; existing apps default to DEPLOYED.
   stage       AppStage @default(DEPLOYED)
-  // Many-to-many: an app can be restricted to specific departments.
-  //   Empty list  → no department restriction (anyone with the right role)
-  //   Non-empty   → non-admins need to be in at least one of these depts
-  //                 (only ADMINs bypass — see lib/roles.ts)
+  // Access policy (union semantics — any one of these admits a user; only
+  // ADMINs bypass gating entirely. See canAccessApp in lib/roles.ts):
+  //   allStaff    → open to everyone. Overlays (doesn't clear) the grants
+  //                 below, so removing the All-staff chip in Access Studio
+  //                 reveals whatever policy was underneath.
+  //   departments → members of any granted department (new members inherit)
+  //   grants      → individual per-person exceptions
+  allStaff    Boolean  @default(false)
   departments Department[] @relation("AppDepartments")
+  grants      AppGrant[]
   // "What's New" entries about this app (see ReleaseNote below).
   releaseNotes ReleaseNote[]
   createdAt   DateTime @default(now())
@@ -145,6 +152,25 @@ model ReleaseNote {
   updatedAt   DateTime   @updatedAt
 
   @@index([publishedAt])
+}
+
+// AppGrant: an individual person's access to an app — the per-user leg of
+// the access policy, managed by drag-and-drop in Access Studio. Department
+// membership and allStaff cover the broad strokes; this is for exceptions
+// ("also let Jordan in"). One row per (app, user); granting twice is a no-op.
+model AppGrant {
+  id        String    @id @default(cuid())
+  appId     String
+  app       PortalApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Email of the admin who granted it (audit breadcrumb; null for rows
+  // converted from the legacy minRole model).
+  grantedBy String?
+  createdAt DateTime  @default(now())
+
+  @@unique([appId, userId])
+  @@index([userId])
 }
 
 // Department: a unit of the company (Construction, Sales, Land, etc.).

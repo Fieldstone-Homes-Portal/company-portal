@@ -22,20 +22,23 @@ export function getRoleLabel(role: Role): string {
 export const ALL_ROLES: Role[] = ["EMPLOYEE", "MANAGER", "ADMIN"];
 
 /* ------------------------------------------------------------------------- */
-/*  Access gating: role + department                                         */
+/*  Access gating: allStaff + departments + individual grants                */
 /* ------------------------------------------------------------------------- */
 
 /**
  * Lightweight shapes used by `canAccessApp`. Either Prisma's nested
  * `{ id, name }` department objects or just an array of IDs/names works —
- * we only compare for overlap. Callers pass whatever's convenient.
+ * we only compare for overlap. Callers pass whatever's convenient; queries
+ * should `include` the app's departments and grants.
  */
 type DeptLike = { id?: string; name?: string };
 type AppForAccess = {
-  minRole: Role;
+  allStaff: boolean;
   departments?: DeptLike[];
+  grants?: { userId: string }[];
 };
 type UserForAccess = {
+  id?: string;
   role: Role;
   departments?: DeptLike[];
 };
@@ -43,29 +46,35 @@ type UserForAccess = {
 /**
  * Returns true if the user is allowed to access the app.
  *
- * Rules (in order):
- *   1. Block if the user's role is below the app's `minRole`.
- *   2. ADMINs bypass department gating (they can open everything).
- *   3. Everyone else (MANAGERs and EMPLOYEEs) must be a member of at least
- *      one of the app's restricted departments. An app with NO department
- *      restrictions is open to anyone meeting the role gate.
+ * Union semantics — ANY of these admits the user (there is no deny):
+ *   1. ADMINs can open everything (they manage the portal).
+ *   2. The app is flagged all-staff.
+ *   3. The user belongs to one of the app's granted departments.
+ *   4. The user has an individual grant (AppGrant row).
+ *
+ * Role is otherwise NOT an access axis — it only conveys portal privileges
+ * (ADMIN = manage the portal). Access is managed in Access Studio.
  */
 export function canAccessApp(user: UserForAccess, app: AppForAccess): boolean {
-  if (!hasMinRole(user.role, app.minRole)) return false;
-  if (user.role === "ADMIN") return true; // only admins bypass department gating
-
-  const appDepts = app.departments || [];
-  if (appDepts.length === 0) return true; // open to anyone meeting the role gate
+  if (user.role === "ADMIN") return true;
+  if (app.allStaff) return true;
 
   const userDepts = user.departments || [];
-  if (userDepts.length === 0) return false; // no department → no access to a restricted app
+  if (userDepts.length > 0) {
+    const appDepts = app.departments || [];
+    // Match on whatever identifier each side provides (prefer id, fall back to name).
+    const userIds = new Set(userDepts.map((d) => d.id).filter(Boolean));
+    const userNames = new Set(userDepts.map((d) => d.name).filter(Boolean));
+    if (
+      appDepts.some(
+        (d) => (d.id && userIds.has(d.id)) || (d.name && userNames.has(d.name)),
+      )
+    ) {
+      return true;
+    }
+  }
 
-  // Match on whatever identifier each side provides (prefer id, fall back to name).
-  const userIds = new Set(userDepts.map((d) => d.id).filter(Boolean));
-  const userNames = new Set(userDepts.map((d) => d.name).filter(Boolean));
-  return appDepts.some(
-    (d) => (d.id && userIds.has(d.id)) || (d.name && userNames.has(d.name)),
-  );
+  return !!user.id && (app.grants || []).some((g) => g.userId === user.id);
 }
 
 /**
@@ -77,14 +86,12 @@ export function whyBlocked(
   app: AppForAccess,
 ): string | null {
   if (canAccessApp(user, app)) return null;
-  if (!hasMinRole(user.role, app.minRole)) {
-    return `This app requires ${getRoleLabel(app.minRole)} role or higher.`;
-  }
   const appDepts = (app.departments || [])
     .map((d) => d.name)
     .filter(Boolean) as string[];
-  if (appDepts.length === 0) return "You don't have access to this app.";
   if (appDepts.length === 1)
     return `This app is restricted to the ${appDepts[0]} department.`;
-  return `This app is restricted to: ${appDepts.join(", ")}.`;
+  if (appDepts.length > 1)
+    return `This app is restricted to: ${appDepts.join(", ")}.`;
+  return "You don't have access to this app.";
 }

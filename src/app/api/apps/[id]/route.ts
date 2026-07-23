@@ -22,6 +22,9 @@ export async function PUT(req: NextRequest, context: Context) {
   // Strip out fields that aren't valid Prisma columns (defensive against
   // stray client-side fields like `departments` arriving via PUT).
   delete (scalarUpdates as Record<string, unknown>).departments;
+  delete (scalarUpdates as Record<string, unknown>).grants;
+  // minRole is retired — ignore it if an old client still sends it.
+  delete (scalarUpdates as Record<string, unknown>).minRole;
 
   const app = await prisma.portalApp.update({
     where: { id },
@@ -35,7 +38,10 @@ export async function PUT(req: NextRequest, context: Context) {
           }
         : {}),
     },
-    include: { departments: { select: { id: true, name: true } } },
+    include: {
+      departments: { select: { id: true, name: true } },
+      grants: { select: { userId: true } },
+    },
   });
 
   return NextResponse.json(app);

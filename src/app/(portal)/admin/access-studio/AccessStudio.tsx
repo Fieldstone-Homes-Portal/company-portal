@@ -1,22 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Building2,
+  Check,
   GripVertical,
   Info,
   Pencil,
   Plus,
-  RotateCcw,
   Search,
-  Shield,
+  Trash2,
   Undo2,
   Users,
   X,
 } from "lucide-react";
-import { appIcon } from "@/lib/appIcons";
+import { appIcon, APP_ICON_MAP } from "@/lib/appIcons";
 import { APP_STAGES, stageMeta } from "@/components/StageBadge";
-import { getRoleLabel } from "@/lib/roles";
+import DepartmentMultiSelect from "@/components/DepartmentMultiSelect";
+import { getRoleLabel, ALL_ROLES } from "@/lib/roles";
 import type { Role } from "@prisma/client";
 
 interface StudioApp {
@@ -24,10 +26,16 @@ interface StudioApp {
   name: string;
   description: string | null;
   icon: string | null;
+  url: string;
+  category: string;
   section: string;
-  minRole: string;
+  sortOrder: number;
+  isActive: boolean;
+  openIn: string;
   stage: string;
+  allStaff: boolean;
   deptIds: string[];
+  userIds: string[];
 }
 
 interface StudioDept {
@@ -42,6 +50,7 @@ interface StudioPerson {
   email: string;
   role: string;
   deptIds: string[];
+  createdAt: string;
 }
 
 // A draggable (or click-selectable) thing from the palette.
@@ -50,9 +59,9 @@ type Chip =
   | { kind: "dept"; id: string }
   | { kind: "person"; id: string };
 
-// Sandbox access policy for one app. `everyone` overlays the lists — when
-// true the app is open to all staff and the lists are kept (removing the
-// All staff chip reveals whatever was underneath).
+// Access policy for one app. `everyone` overlays the lists — when true the
+// app is open to all staff and the lists are kept (removing the All staff
+// chip reveals whatever was underneath).
 interface Grant {
   everyone: boolean;
   deptIds: string[];
@@ -66,7 +75,18 @@ const SECTIONS: { key: string; label: string }[] = [
   { key: "dashboard", label: "Dashboards" },
 ];
 
+const ICON_KEYS = Object.keys(APP_ICON_MAP);
+const OPEN_MODES = [
+  { value: "iframe", label: "Embedded (iframe)" },
+  { value: "external", label: "New tab" },
+];
+
 const PEOPLE_PREVIEW_COUNT = 36;
+const NEW_PERSON_WINDOW_MS = 7 * 24 * 60 * 60 * 1000; // joined in the last 7 days
+
+const inputClass =
+  "w-full rounded-xl border border-fs-warm-gray bg-fs-warm-white px-4 py-2.5 text-sm text-fs-espresso placeholder:text-fs-copper-light focus:border-fs-copper focus:outline-none focus:ring-1 focus:ring-fs-copper";
+const labelClass = "mb-1 block text-xs font-medium text-fs-copper";
 
 function initials(name: string): string {
   return name
@@ -78,15 +98,39 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
+function isNewPerson(createdAt: string): boolean {
+  return Date.now() - new Date(createdAt).getTime() <= NEW_PERSON_WINDOW_MS;
+}
+
+/** Blank form for the app editor modal. */
+const blankAppForm = {
+  name: "",
+  description: "",
+  icon: "tool",
+  url: "",
+  category: "general",
+  section: "tool",
+  sortOrder: 0,
+  openIn: "iframe",
+  isActive: true,
+};
+type AppForm = typeof blankAppForm;
+
 export default function AccessStudio({
-  apps,
+  apps: initialApps,
   departments,
-  people,
+  people: initialPeople,
+  currentUserId,
 }: {
   apps: StudioApp[];
   departments: StudioDept[];
   people: StudioPerson[];
+  currentUserId: string;
 }) {
+  const router = useRouter();
+  const [apps, setApps] = useState(initialApps);
+  const [people, setPeople] = useState(initialPeople);
+
   const deptById = useMemo(
     () => new Map(departments.map((d) => [d.id, d])),
     [departments],
@@ -103,33 +147,26 @@ export default function AccessStudio({
     return m;
   }, [departments, people]);
 
-  // Seed the sandbox from today's live rules: no department restriction
-  // means "open to everyone" (the minRole gate is shown as a legacy badge
-  // but isn't modeled here — this prototype explores the grants-only model).
-  const seed = useMemo<GrantMap>(() => {
+  const [grants, setGrants] = useState<GrantMap>(() => {
     const g: GrantMap = {};
-    for (const a of apps) {
+    for (const a of initialApps) {
       g[a.id] = {
-        everyone: a.deptIds.length === 0,
+        everyone: a.allStaff,
         deptIds: [...a.deptIds],
-        userIds: [],
+        userIds: [...a.userIds],
       };
     }
     return g;
-  }, [apps]);
+  });
 
-  const [grants, setGrants] = useState<GrantMap>(seed);
-  // Undo history holds generic revert actions so it can cover both sandbox
-  // grant changes (revert = restore prior client state) and live stage
-  // changes (revert = PATCH the previous stage back).
+  // Undo history holds generic revert actions: access changes revert by
+  // re-PUTting the previous policy, stage changes by re-PATCHing the
+  // previous stage. Everything on this page saves for real.
   const [history, setHistory] = useState<{ desc: string; revert: () => void }[]>(
     [],
   );
-  // Lifecycle stage per app. UNLIKE grants, stage changes are REAL — each
-  // click PATCHes /api/apps/[id]/stage and persists for everyone. Stage is
-  // informational only (a maturity badge), so saving it live is safe.
   const [stages, setStages] = useState<Record<string, string>>(() =>
-    Object.fromEntries(apps.map((a) => [a.id, a.stage])),
+    Object.fromEntries(initialApps.map((a) => [a.id, a.stage])),
   );
   const [savingStage, setSavingStage] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; undoable: boolean } | null>(
@@ -141,9 +178,14 @@ export default function AccessStudio({
   const [personQuery, setPersonQuery] = useState("");
   const [showAllPeople, setShowAllPeople] = useState(false);
   const [inspectId, setInspectId] = useState<string | null>(null);
+  const [savingPerson, setSavingPerson] = useState(false);
+  // App editor modal: null = closed, "new" = creating, otherwise app id.
+  const [editingAppId, setEditingAppId] = useState<string | "new" | null>(null);
+  const [appForm, setAppForm] = useState<AppForm>(blankAppForm);
+  const [savingApp, setSavingApp] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Toasts auto-dismiss; Esc clears the selection and the inspector.
+  // Toasts auto-dismiss; Esc clears the selection and any open overlay.
   useEffect(() => {
     if (!toast) return;
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -158,30 +200,15 @@ export default function AccessStudio({
       if (e.key === "Escape") {
         setSelected(null);
         setInspectId(null);
+        setEditingAppId(null);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  function chipLabel(chip: Chip): string {
-    if (chip.kind === "all") return "All staff";
-    if (chip.kind === "dept") return deptById.get(chip.id)?.name || "?";
-    return personById.get(chip.id)?.name || "?";
-  }
-
   function info(msg: string) {
     setToast({ msg, undoable: false });
-  }
-
-  function mutate(desc: string, next: GrantMap) {
-    const before = grants;
-    setHistory((h) => [
-      ...h.slice(-49),
-      { desc, revert: () => setGrants(before) },
-    ]);
-    setGrants(next);
-    setToast({ msg: desc, undoable: true });
   }
 
   function undo() {
@@ -189,7 +216,53 @@ export default function AccessStudio({
     if (!last) return;
     setHistory((h) => h.slice(0, -1));
     last.revert();
-    setToast({ msg: `Undid: ${last.desc}`, undoable: false });
+    setToast({ msg: `Undoing: ${last.desc}`, undoable: false });
+  }
+
+  /* ---------------------------- access policy ---------------------------- */
+
+  async function persistPolicy(appId: string, g: Grant): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/apps/${appId}/access`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          allStaff: g.everyone,
+          deptIds: g.deptIds,
+          userIds: g.userIds,
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Save one app's new access policy: optimistic UI, PUT, undo entry.
+   * Undo re-PUTs the previous policy (these are real writes).
+   */
+  async function mutate(appId: string, next: Grant, desc: string) {
+    const before = grants[appId];
+    setGrants((g) => ({ ...g, [appId]: next }));
+    const ok = await persistPolicy(appId, next);
+    if (!ok) {
+      setGrants((g) => ({ ...g, [appId]: before }));
+      return info(`Couldn't save that change — try again.`);
+    }
+    setHistory((h) => [
+      ...h.slice(-49),
+      {
+        desc,
+        revert: () => {
+          void persistPolicy(appId, before).then((restored) => {
+            if (restored) setGrants((g) => ({ ...g, [appId]: before }));
+            else info("Couldn't undo — try again.");
+          });
+        },
+      },
+    ]);
+    setToast({ msg: desc, undoable: true });
   }
 
   /* --------------------------- lifecycle stage --------------------------- */
@@ -215,12 +288,11 @@ export default function AccessStudio({
     setSavingStage(null);
     if (!ok) return info(`Couldn't save ${app.name}'s stage — try again.`);
     setStages((s) => ({ ...s, [app.id]: next }));
-    const desc = `Moved ${app.name} to ${stageMeta(next).label} — saved for everyone`;
+    const desc = `Moved ${app.name} to ${stageMeta(next).label}`;
     setHistory((h) => [
       ...h.slice(-49),
       {
         desc,
-        // Undo re-PATCHes the previous stage (this was a real write).
         revert: () => {
           void persistStage(app.id, prev).then((restored) => {
             if (restored) setStages((s) => ({ ...s, [app.id]: prev }));
@@ -232,7 +304,123 @@ export default function AccessStudio({
     setToast({ msg: desc, undoable: true });
   }
 
-  /** Who can open this app under the sandbox rules, and why. */
+  /* ------------------------------ app CRUD ------------------------------ */
+
+  function openAppEditor(app: StudioApp | null) {
+    if (app) {
+      setAppForm({
+        name: app.name,
+        description: app.description || "",
+        icon: app.icon || "tool",
+        url: app.url,
+        category: app.category,
+        section: app.section,
+        sortOrder: app.sortOrder,
+        openIn: app.openIn,
+        isActive: app.isActive,
+      });
+      setEditingAppId(app.id);
+    } else {
+      setAppForm(blankAppForm);
+      setEditingAppId("new");
+    }
+  }
+
+  async function saveApp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingAppId) return;
+    setSavingApp(true);
+    const isNew = editingAppId === "new";
+    const res = await fetch(isNew ? "/api/apps" : `/api/apps/${editingAppId}`, {
+      method: isNew ? "POST" : "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(appForm),
+    });
+    setSavingApp(false);
+    if (!res.ok) return info("Couldn't save the app — check the fields and try again.");
+    const saved = await res.json();
+    const asStudioApp: StudioApp = {
+      id: saved.id,
+      name: saved.name,
+      description: saved.description,
+      icon: saved.icon,
+      url: saved.url,
+      category: saved.category,
+      section: saved.section,
+      sortOrder: saved.sortOrder,
+      isActive: saved.isActive,
+      openIn: saved.openIn,
+      stage: saved.stage,
+      allStaff: saved.allStaff,
+      deptIds: (saved.departments || []).map((d: { id: string }) => d.id),
+      userIds: (saved.grants || []).map((g: { userId: string }) => g.userId),
+    };
+    if (isNew) {
+      setApps((a) => [...a, asStudioApp]);
+      setGrants((g) => ({
+        ...g,
+        [saved.id]: { everyone: saved.allStaff, deptIds: [], userIds: [] },
+      }));
+      setStages((s) => ({ ...s, [saved.id]: saved.stage }));
+      info(
+        `Added ${saved.name}. It starts locked — drag a department or person onto it to grant access.`,
+      );
+    } else {
+      setApps((a) => a.map((x) => (x.id === saved.id ? asStudioApp : x)));
+      info(`Saved ${saved.name}.`);
+    }
+    setEditingAppId(null);
+    router.refresh();
+  }
+
+  async function deleteApp(app: StudioApp) {
+    if (
+      !confirm(
+        `Remove "${app.name}" from the portal? This deletes its access policy too.`,
+      )
+    )
+      return;
+    const res = await fetch(`/api/apps/${app.id}`, { method: "DELETE" });
+    if (!res.ok) return info(`Couldn't delete ${app.name} — try again.`);
+    setApps((a) => a.filter((x) => x.id !== app.id));
+    setEditingAppId(null);
+    info(`Deleted ${app.name}.`);
+    router.refresh();
+  }
+
+  /* ------------------------------ people ------------------------------- */
+
+  async function savePerson(
+    personId: string,
+    changes: { role?: string; departmentIds?: string[] },
+    desc: string,
+  ) {
+    setSavingPerson(true);
+    const res = await fetch(`/api/users/${personId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes),
+    });
+    setSavingPerson(false);
+    if (!res.ok) return info("Couldn't save — try again.");
+    const updated = await res.json();
+    setPeople((ps) =>
+      ps.map((p) =>
+        p.id === personId
+          ? {
+              ...p,
+              role: updated.role,
+              deptIds: (updated.departments || []).map(
+                (d: { id: string }) => d.id,
+              ),
+            }
+          : p,
+      ),
+    );
+    info(desc);
+  }
+
+  /** Who can open this app under the current policy, and why. */
   function resolvedPeople(
     appId: string,
   ): { person: StudioPerson; via: string }[] {
@@ -261,16 +449,23 @@ export default function AccessStudio({
     return resolvedPeople(appId).length;
   }
 
+  function chipLabel(chip: Chip): string {
+    if (chip.kind === "all") return "All staff";
+    if (chip.kind === "dept") return deptById.get(chip.id)?.name || "?";
+    return personById.get(chip.id)?.name || "?";
+  }
+
   function applyChip(app: StudioApp, chip: Chip) {
     const g = grants[app.id];
     if (!g) return;
 
     if (chip.kind === "all") {
       if (g.everyone) return info(`${app.name} is already open to everyone.`);
-      return mutate(`Opened ${app.name} to all staff`, {
-        ...grants,
-        [app.id]: { ...g, everyone: true },
-      });
+      return void mutate(
+        app.id,
+        { ...g, everyone: true },
+        `Opened ${app.name} to all staff`,
+      );
     }
 
     if (g.everyone)
@@ -284,12 +479,10 @@ export default function AccessStudio({
       if (g.deptIds.includes(chip.id))
         return info(`${dept.name} already has access to ${app.name}.`);
       const count = deptMembers.get(chip.id)?.length ?? 0;
-      return mutate(
+      return void mutate(
+        app.id,
+        { ...g, deptIds: [...g.deptIds, chip.id] },
         `Granted ${dept.name} (${count} ${count === 1 ? "person" : "people"}) access to ${app.name}`,
-        {
-          ...grants,
-          [app.id]: { ...g, deptIds: [...g.deptIds, chip.id] },
-        },
       );
     }
 
@@ -302,39 +495,33 @@ export default function AccessStudio({
       return info(
         `${person.name} already has access via ${deptById.get(viaDept)?.name}.`,
       );
-    return mutate(`Granted ${person.name} access to ${app.name}`, {
-      ...grants,
-      [app.id]: { ...g, userIds: [...g.userIds, chip.id] },
-    });
+    return void mutate(
+      app.id,
+      { ...g, userIds: [...g.userIds, chip.id] },
+      `Granted ${person.name} access to ${app.name}`,
+    );
   }
 
   function removeChip(app: StudioApp, chip: Chip) {
     const g = grants[app.id];
     if (!g) return;
     if (chip.kind === "all")
-      return mutate(`Removed All staff from ${app.name}`, {
-        ...grants,
-        [app.id]: { ...g, everyone: false },
-      });
-    if (chip.kind === "dept")
-      return mutate(
-        `Removed ${deptById.get(chip.id)?.name} from ${app.name}`,
-        {
-          ...grants,
-          [app.id]: { ...g, deptIds: g.deptIds.filter((d) => d !== chip.id) },
-        },
+      return void mutate(
+        app.id,
+        { ...g, everyone: false },
+        `Removed All staff from ${app.name}`,
       );
-    return mutate(
+    if (chip.kind === "dept")
+      return void mutate(
+        app.id,
+        { ...g, deptIds: g.deptIds.filter((d) => d !== chip.id) },
+        `Removed ${deptById.get(chip.id)?.name} from ${app.name}`,
+      );
+    return void mutate(
+      app.id,
+      { ...g, userIds: g.userIds.filter((u) => u !== chip.id) },
       `Removed ${personById.get(chip.id)?.name} from ${app.name}`,
-      {
-        ...grants,
-        [app.id]: { ...g, userIds: g.userIds.filter((u) => u !== chip.id) },
-      },
     );
-  }
-
-  function resetAll() {
-    mutate("Reset to today's live access", seed);
   }
 
   /* ----------------------------- drag & drop ----------------------------- */
@@ -384,6 +571,10 @@ export default function AccessStudio({
       : filteredPeople.slice(0, PEOPLE_PREVIEW_COUNT);
 
   const inspected = inspectId ? personById.get(inspectId) : null;
+  const editingApp =
+    editingAppId && editingAppId !== "new"
+      ? apps.find((a) => a.id === editingAppId) || null
+      : null;
 
   function personCanOpen(p: StudioPerson, appId: string): string | null {
     const g = grants[appId];
@@ -419,23 +610,12 @@ export default function AccessStudio({
       {/* ------------------------------ apps ------------------------------ */}
       {SECTIONS.map(({ key, label }) => {
         const sectionApps = apps.filter((a) => a.section === key);
-        if (sectionApps.length === 0) return null;
+        if (sectionApps.length === 0 && key !== "tool") return null;
         return (
           <section key={key}>
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-fs-copper-light">
-                {label}
-              </h2>
-              {key === SECTIONS[0].key && (
-                <button
-                  onClick={resetAll}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-fs-copper transition-colors hover:bg-fs-warm-gray"
-                >
-                  <RotateCcw size={12} />
-                  Reset to live access
-                </button>
-              )}
-            </div>
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-fs-copper-light">
+              {label}
+            </h2>
             <div
               className="flex gap-4 overflow-x-auto pb-3"
               onDragOver={rowDragOver}
@@ -466,7 +646,7 @@ export default function AccessStudio({
                         : selected
                           ? "cursor-copy ring-1 ring-fs-copper/50"
                           : "ring-1 ring-fs-warm-gray"
-                    }`}
+                    } ${!app.isActive ? "opacity-60" : ""}`}
                   >
                     <div className="border-b border-fs-warm-gray px-4 py-3">
                       <div className="flex items-start gap-2">
@@ -480,29 +660,20 @@ export default function AccessStudio({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            info(
-                              "App editing stays in Manage Apps in this prototype.",
-                            );
+                            openAppEditor(app);
                           }}
                           className="rounded-lg p-1.5 text-fs-copper-light transition-colors hover:bg-fs-warm-white hover:text-fs-copper"
-                          title="Edit app"
+                          title={`Edit ${app.name}`}
                         >
                           <Pencil size={13} />
                         </button>
                       </div>
-                      {/* Legacy role gate on its own line so the title above
-                          keeps the full card width. */}
-                      {app.minRole !== "EMPLOYEE" && (
-                        <span
-                          title="Legacy role gate — not modeled in this prototype"
-                          className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-fs-copper/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-fs-copper"
-                        >
-                          <Shield size={9} />
-                          {app.minRole.toLowerCase()}+
+                      {!app.isActive && (
+                        <span className="mt-1.5 inline-flex rounded-full bg-danger/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-danger">
+                          Disabled
                         </span>
                       )}
-                      {/* Lifecycle pipeline — unlike the sandboxed grants
-                          below, clicking a stage SAVES IMMEDIATELY. */}
+                      {/* Lifecycle pipeline — click a stage to move the app. */}
                       <div
                         className="mt-2 flex items-center justify-between gap-2"
                         onClick={(e) => e.stopPropagation()}
@@ -526,7 +697,7 @@ export default function AccessStudio({
                                   title={`${s.label}: ${s.description}${
                                     active
                                       ? " (current stage)"
-                                      : " — click to move here. Saves immediately."
+                                      : " — click to move here."
                                   }`}
                                   className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
                                     active
@@ -541,14 +712,14 @@ export default function AccessStudio({
                           })}
                         </div>
                         <span
-                          title="Lifecycle stage is informational (a maturity badge on tiles) and saves immediately — unlike the access grants below, which are sandbox-only."
+                          title="Lifecycle stage — informational only; it never changes who has access."
                           className="truncate text-[9px] font-semibold uppercase tracking-wider text-fs-copper-light"
                         >
-                          {stageMeta(stages[app.id]).label} · live
+                          {stageMeta(stages[app.id]).label}
                         </span>
                       </div>
                       <p className="mt-1.5 line-clamp-2 min-h-[2rem] text-xs text-fs-copper">
-                        {app.description || " "}
+                        {app.description || " "}
                       </p>
                     </div>
 
@@ -672,9 +843,7 @@ export default function AccessStudio({
               })}
 
               <button
-                onClick={() =>
-                  info("App creation stays in Manage Apps in this prototype.")
-                }
+                onClick={() => openAppEditor(null)}
                 className="flex w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-fs-warm-gray text-fs-copper-light transition-colors hover:border-fs-copper hover:text-fs-copper"
               >
                 <Plus size={20} />
@@ -750,7 +919,8 @@ export default function AccessStudio({
               People
             </h2>
             <span className="text-[11px] text-fs-copper-light">
-              — drag one person for an individual exception
+              — drag one person for an individual exception; the ⓘ opens
+              their profile (role, departments, access)
             </span>
           </div>
           <div className="relative sm:w-64">
@@ -791,6 +961,11 @@ export default function AccessStudio({
                   {initials(p.name)}
                 </span>
                 {p.name}
+                {isNewPerson(p.createdAt) && (
+                  <span className="rounded-full bg-fs-copper px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
+                    New
+                  </span>
+                )}
                 <span className="text-[10px] text-fs-copper-light">
                   {p.deptIds
                     .map((d) => deptById.get(d)?.name)
@@ -803,7 +978,7 @@ export default function AccessStudio({
                     setInspectId(p.id);
                   }}
                   className="rounded-full p-0.5 text-fs-copper-light transition-colors hover:bg-fs-warm-white hover:text-fs-copper"
-                  title={`What can ${p.name} open?`}
+                  title={`Open ${p.name}'s profile`}
                 >
                   <Info size={13} />
                 </button>
@@ -843,12 +1018,206 @@ export default function AccessStudio({
           <span className="h-3 w-3 rounded-full bg-white ring-1 ring-fs-warm-gray" />{" "}
           individual grant
         </span>
-        <span>Click the person-count on a card to see everyone it resolves to.</span>
-        <span className="font-semibold">
-          The stage pipeline on each card saves immediately — it&apos;s the one
-          control here that isn&apos;t sandboxed.
+        <span>
+          Every change saves immediately — use Undo on the toast if you
+          fat-finger a drop. Admins can always open everything.
         </span>
       </div>
+
+      {/* --------------------------- app editor --------------------------- */}
+      {editingAppId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-fs-espresso/40 p-4"
+          onClick={() => setEditingAppId(null)}
+        >
+          <form
+            onSubmit={saveApp}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-display text-lg font-bold text-fs-espresso">
+                {editingApp ? `Edit ${editingApp.name}` : "New App"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setEditingAppId(null)}
+                className="rounded-lg p-1 text-fs-copper hover:bg-fs-warm-gray"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>App Name *</label>
+                <input
+                  required
+                  value={appForm.name}
+                  onChange={(e) =>
+                    setAppForm({ ...appForm, name: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="Plat Studio"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>URL *</label>
+                <input
+                  required
+                  value={appForm.url}
+                  onChange={(e) =>
+                    setAppForm({ ...appForm, url: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="https://plat-studio.railway.app"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Description</label>
+                <input
+                  value={appForm.description}
+                  onChange={(e) =>
+                    setAppForm({ ...appForm, description: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="Interactive lot mapping tool for subdivision plats"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Icon</label>
+                <select
+                  value={appForm.icon}
+                  onChange={(e) =>
+                    setAppForm({ ...appForm, icon: e.target.value })
+                  }
+                  className={inputClass}
+                >
+                  {ICON_KEYS.map((i) => (
+                    <option key={i} value={i}>
+                      {i}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Category</label>
+                <input
+                  value={appForm.category}
+                  onChange={(e) =>
+                    setAppForm({ ...appForm, category: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="tools"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Open Mode</label>
+                <select
+                  value={appForm.openIn}
+                  onChange={(e) =>
+                    setAppForm({ ...appForm, openIn: e.target.value })
+                  }
+                  className={inputClass}
+                >
+                  {OPEN_MODES.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Sort Order</label>
+                <input
+                  type="number"
+                  value={appForm.sortOrder}
+                  onChange={(e) =>
+                    setAppForm({
+                      ...appForm,
+                      sortOrder: Number(e.target.value) || 0,
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>
+                  Section{" "}
+                  <span className="text-fs-copper-light">
+                    — which page in the portal it lives on
+                  </span>
+                </label>
+                <select
+                  value={appForm.section}
+                  onChange={(e) =>
+                    setAppForm({ ...appForm, section: e.target.value })
+                  }
+                  className={inputClass}
+                >
+                  <option value="tool">Toolbox</option>
+                  <option value="dashboard">Dashboards</option>
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="flex items-center gap-2 text-sm text-fs-espresso">
+                  <input
+                    type="checkbox"
+                    checked={appForm.isActive}
+                    onChange={(e) =>
+                      setAppForm({ ...appForm, isActive: e.target.checked })
+                    }
+                    className="h-4 w-4 rounded border-fs-warm-gray accent-fs-copper"
+                  />
+                  Active{" "}
+                  <span className="text-xs text-fs-copper-light">
+                    — disabled apps stay configured but are hidden from
+                    everyone
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between gap-3">
+              {editingApp ? (
+                <button
+                  type="button"
+                  onClick={() => deleteApp(editingApp)}
+                  className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
+                >
+                  <Trash2 size={14} />
+                  Delete app
+                </button>
+              ) : (
+                <span className="text-xs text-fs-copper-light">
+                  New apps start locked — grant access after creating.
+                </span>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingAppId(null)}
+                  className="rounded-full px-5 py-2 text-sm font-medium text-fs-copper hover:bg-fs-warm-gray"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingApp}
+                  className="flex items-center gap-2 rounded-full bg-fs-espresso px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-fs-copper disabled:opacity-50"
+                >
+                  <Check size={14} />
+                  {savingApp
+                    ? "Saving..."
+                    : editingApp
+                      ? "Save changes"
+                      : "Add App"}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* ------------------------- person inspector ------------------------- */}
       {inspected && (
@@ -857,7 +1226,7 @@ export default function AccessStudio({
           onClick={() => setInspectId(null)}
         >
           <div
-            className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+            className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between">
@@ -868,15 +1237,13 @@ export default function AccessStudio({
                 <div>
                   <p className="font-display font-bold text-fs-espresso">
                     {inspected.name}
+                    {inspected.id === currentUserId && (
+                      <span className="ml-1.5 text-xs font-normal text-fs-copper">
+                        (you)
+                      </span>
+                    )}
                   </p>
-                  <p className="text-xs text-fs-copper">
-                    {inspected.email} ·{" "}
-                    {getRoleLabel(inspected.role as Role)} ·{" "}
-                    {inspected.deptIds
-                      .map((d) => deptById.get(d)?.name)
-                      .filter(Boolean)
-                      .join(", ") || "no departments"}
-                  </p>
+                  <p className="text-xs text-fs-copper">{inspected.email}</p>
                 </div>
               </div>
               <button
@@ -886,28 +1253,87 @@ export default function AccessStudio({
                 <X size={18} />
               </button>
             </div>
+
+            <div className="mb-5 grid grid-cols-1 gap-4">
+              <div>
+                <label className={labelClass}>
+                  Portal role{" "}
+                  <span className="text-fs-copper-light">
+                    — Admin can manage the portal and open everything
+                  </span>
+                </label>
+                <select
+                  value={inspected.role}
+                  disabled={inspected.id === currentUserId || savingPerson}
+                  onChange={(e) =>
+                    savePerson(
+                      inspected.id,
+                      { role: e.target.value },
+                      `Set ${inspected.name}'s role to ${getRoleLabel(e.target.value as Role)}`,
+                    )
+                  }
+                  title={
+                    inspected.id === currentUserId
+                      ? "You can't change your own role."
+                      : undefined
+                  }
+                  className={`${inputClass} disabled:opacity-50`}
+                >
+                  {ALL_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {getRoleLabel(r)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Departments</label>
+                <DepartmentMultiSelect
+                  allDepartments={departments}
+                  selectedIds={inspected.deptIds}
+                  onChange={(ids) =>
+                    savePerson(
+                      inspected.id,
+                      { departmentIds: ids },
+                      `Updated ${inspected.name}'s departments`,
+                    )
+                  }
+                  emptyLabel="No departments — only all-staff apps and individual grants apply."
+                  placeholder="Assign departments…"
+                />
+              </div>
+            </div>
+
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-fs-copper-light">
-              Can open (in this sandbox)
+              Can open
             </p>
             <div className="space-y-1.5">
-              {apps.map((a) => {
-                const why = personCanOpen(inspected, a.id);
-                return (
-                  <div
-                    key={a.id}
-                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${
-                      why
-                        ? "bg-fs-warm-white text-fs-espresso"
-                        : "text-fs-copper-light"
-                    }`}
-                  >
-                    <span>{a.name}</span>
-                    <span className="text-[10px]">
-                      {why || "no access"}
-                    </span>
-                  </div>
-                );
-              })}
+              {inspected.role === "ADMIN" ? (
+                <p className="rounded-xl bg-fs-warm-white px-3 py-2 text-sm text-fs-espresso">
+                  Everything — admins bypass access gating.
+                </p>
+              ) : (
+                apps
+                  .filter((a) => a.isActive)
+                  .map((a) => {
+                    const why = personCanOpen(inspected, a.id);
+                    return (
+                      <div
+                        key={a.id}
+                        className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${
+                          why
+                            ? "bg-fs-warm-white text-fs-espresso"
+                            : "text-fs-copper-light"
+                        }`}
+                      >
+                        <span>{a.name}</span>
+                        <span className="text-[10px]">
+                          {why || "no access"}
+                        </span>
+                      </div>
+                    );
+                  })
+              )}
             </div>
           </div>
         </div>

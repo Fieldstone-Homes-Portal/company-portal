@@ -48,7 +48,10 @@ export async function POST(request: Request) {
   if (kind === "app") {
     const app = await prisma.portalApp.findUnique({
       where: { id },
-      include: { departments: { select: { id: true, name: true } } },
+      include: {
+        departments: { select: { id: true, name: true } },
+        grants: { select: { userId: true } },
+      },
     });
     // Silently ignore unknown / inactive / inaccessible apps.
     if (!app || !app.isActive || !canAccessApp(session.user, app)) {
