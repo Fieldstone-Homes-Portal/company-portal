@@ -20,17 +20,22 @@ export async function POST(req: NextRequest) {
       description: body.description || null,
       icon: body.icon || null,
       url: body.url,
-      minRole: body.minRole || "EMPLOYEE",
       category: body.category || "general",
       section: body.section || "tool",
       sortOrder: body.sortOrder || 0,
       openIn: body.openIn || "iframe",
       stage: body.stage || "DEPLOYED",
+      // New apps start locked down (not all-staff, no grants) — access is
+      // then granted deliberately in Access Studio.
+      allStaff: body.allStaff === true,
       departments: departmentIds.length
         ? { connect: departmentIds.map((id) => ({ id })) }
         : undefined,
     },
-    include: { departments: { select: { id: true, name: true } } },
+    include: {
+      departments: { select: { id: true, name: true } },
+      grants: { select: { userId: true } },
+    },
   });
 
   // Auto-seed a "What's New" entry so new apps announce themselves on the

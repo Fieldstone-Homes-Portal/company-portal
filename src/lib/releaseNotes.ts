@@ -33,6 +33,7 @@ export interface WhatsNewItem {
 }
 
 interface UserForNotes {
+  id?: string;
   role: Role;
   departments?: { id: string; name: string }[];
 }
@@ -80,8 +81,9 @@ export async function getWhatsNew(
           name: true,
           icon: true,
           isActive: true,
-          minRole: true,
+          allStaff: true,
           departments: { select: { id: true, name: true } },
+          grants: { select: { userId: true } },
         },
       },
     },

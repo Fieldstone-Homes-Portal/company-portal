@@ -11,11 +11,14 @@ export default async function DashboardPage() {
   if (!session?.user) redirect("/login");
 
   // Toolbox only shows apps in the "tool" section. Apps marked as
-  // "dashboard" appear in /dashboards instead. Include departments so
-  // we can filter by both role AND department membership below.
+  // "dashboard" appear in /dashboards instead. Include departments and
+  // grants so canAccessApp() can resolve the full access policy below.
   const apps = await prisma.portalApp.findMany({
     where: { isActive: true, section: "tool" },
-    include: { departments: { select: { id: true, name: true } } },
+    include: {
+      departments: { select: { id: true, name: true } },
+      grants: { select: { userId: true } },
+    },
     orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
   });
 
@@ -67,7 +70,7 @@ export default async function DashboardPage() {
             No apps yet
           </h2>
           <p className="mt-1 text-sm text-fs-copper">
-            Apps will appear here once a manager adds them to the portal.
+            Apps will appear here once an admin adds them to the portal.
           </p>
         </div>
       ) : (

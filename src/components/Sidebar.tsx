@@ -8,14 +8,11 @@ import {
   LayoutDashboard,
   Link2,
   Settings,
-  Users,
-  AppWindow,
   ChevronLeft,
   ChevronRight,
   Boxes,
   Building2,
   Shield,
-  FlaskConical,
   BarChart3,
   Megaphone,
 } from "lucide-react";
@@ -40,33 +37,22 @@ const employeeNav = [
 ];
 
 // Management links — ADMIN-only, like everything under /admin.
+// Access Studio replaced the old Manage Apps / Manage Users / App Access
+// pages: apps, access grants, and people are all managed there now.
 const managerNav = [
-  { label: "Manage Apps", href: "/admin/apps", icon: AppWindow },
-  { label: "Manage Users", href: "/admin/users", icon: Users },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
-];
-
-// Admin-only links — visible to ADMINs only. Departments live here
-// because they affect access for everyone in the org.
-const adminNav = [
+  { label: "Access Studio", href: "/admin/access-studio", icon: Shield },
+  { label: "Departments", href: "/admin/departments", icon: Building2 },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   // Write/edit the "What's New" announcements (auto-seeded on new apps).
-  // SOFT LAUNCH: lives in the admin group while the feature is admin-only;
-  // move back to managerNav when it opens up to managers.
   { label: "Release Notes", href: "/admin/releases", icon: Megaphone },
-  { label: "App Access", href: "/admin/access", icon: Shield },
-  { label: "Departments", href: "/admin/departments", icon: Building2 },
-  // Prototype of the drag-and-drop access manager — sandbox only, never
-  // writes to the database. Remove once the real thing replaces it.
-  { label: "Access Studio", href: "/admin/access-studio", icon: FlaskConical },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export default function Sidebar({ role, footerSlot }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const isAdmin = role === "ADMIN";
   // The entire Management section is admin-only.
-  const isManager = isAdmin;
+  const isAdmin = role === "ADMIN";
 
   return (
     <aside
@@ -144,7 +130,7 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
           );
         })}
 
-        {isManager && (
+        {isAdmin && (
           <>
             {!collapsed && (
               <p className="mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-fs-copper">
@@ -153,25 +139,6 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
             )}
             {collapsed && <div className="my-4 border-t border-white/10" />}
             {managerNav.map((item) => {
-              const active =
-            pathname === item.href || pathname.startsWith(item.href + "/");
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-white/15 text-white shadow-sm"
-                      : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
-                  } ${collapsed ? "justify-center" : ""}`}
-                  title={collapsed ? item.label : undefined}
-                >
-                  <item.icon size={18} />
-                  {!collapsed && item.label}
-                </Link>
-              );
-            })}
-            {isAdmin && adminNav.map((item) => {
               const active =
             pathname === item.href || pathname.startsWith(item.href + "/");
               return (

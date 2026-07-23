@@ -10,11 +10,14 @@ export default async function DashboardsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  // Dashboards page only shows apps in the "dashboard" section.
-  // Include departments so canAccessApp() can apply the dept gate.
+  // Dashboards page only shows apps in the "dashboard" section. Include
+  // departments and grants so canAccessApp() can resolve the access policy.
   const apps = await prisma.portalApp.findMany({
     where: { isActive: true, section: "dashboard" },
-    include: { departments: { select: { id: true, name: true } } },
+    include: {
+      departments: { select: { id: true, name: true } },
+      grants: { select: { userId: true } },
+    },
     orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
   });
 

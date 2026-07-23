@@ -1,14 +1,14 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { FlaskConical } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import AccessStudio from "./AccessStudio";
 
-// Access Studio — PROTOTYPE of the drag-and-drop access manager.
-// Reads real apps/departments/users so it feels true to life, but every
-// grant lives in client-side state only. Nothing on this page writes to
-// the database; real access rules are untouched.
+// Access Studio — THE management surface for portal apps and access.
+// Drag departments and people onto apps to grant access, click chips to
+// revoke, edit app details on each card, and manage a person's role and
+// departments from their profile. Every change saves immediately (with
+// undo). Departments themselves are created under /admin/departments.
 export default async function AccessStudioPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -16,9 +16,12 @@ export default async function AccessStudioPage() {
   if (session.user.role !== "ADMIN") redirect("/dashboard");
 
   const [apps, departments, users] = await Promise.all([
+    // Include disabled apps — they're managed here too (shown dimmed).
     prisma.portalApp.findMany({
-      where: { isActive: true },
-      include: { departments: { select: { id: true } } },
+      include: {
+        departments: { select: { id: true } },
+        grants: { select: { userId: true } },
+      },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
     prisma.department.findMany({
@@ -31,6 +34,7 @@ export default async function AccessStudioPage() {
         name: true,
         email: true,
         role: true,
+        createdAt: true,
         departments: { select: { id: true } },
       },
       orderBy: { name: "asc" },
@@ -42,25 +46,8 @@ export default async function AccessStudioPage() {
       <PageHeader
         label="Management"
         title="Access Studio"
-        subtitle="Drag departments and people onto apps to grant access."
+        subtitle="Apps, access, and people — drag departments and people onto apps to grant access."
       />
-
-      <div className="mb-6 flex items-start gap-3 rounded-2xl bg-fs-copper/10 p-4 text-sm text-fs-espresso ring-1 ring-fs-copper/30">
-        <FlaskConical size={18} className="mt-0.5 shrink-0 text-fs-copper" />
-        <p>
-          <span className="font-semibold">Prototype sandbox.</span> Everything
-          here starts from today&apos;s real apps, departments, and people, but
-          access changes live only on this page — nothing is saved, and{" "}
-          <span className="font-semibold">
-            real access is never affected
-          </span>
-          . Reload to start over. One exception:{" "}
-          <span className="font-semibold">
-            the lifecycle stage pipeline on each app card saves immediately
-          </span>{" "}
-          (stage is informational only — it never changes who has access).
-        </p>
-      </div>
 
       <AccessStudio
         apps={apps.map((a) => ({
@@ -68,10 +55,16 @@ export default async function AccessStudioPage() {
           name: a.name,
           description: a.description,
           icon: a.icon,
+          url: a.url,
+          category: a.category,
           section: a.section,
-          minRole: a.minRole,
+          sortOrder: a.sortOrder,
+          isActive: a.isActive,
+          openIn: a.openIn,
           stage: a.stage,
+          allStaff: a.allStaff,
           deptIds: a.departments.map((d) => d.id),
+          userIds: a.grants.map((g) => g.userId),
         }))}
         departments={departments.map((d) => ({
           id: d.id,
@@ -84,7 +77,9 @@ export default async function AccessStudioPage() {
           email: u.email,
           role: u.role,
           deptIds: u.departments.map((d) => d.id),
+          createdAt: u.createdAt.toISOString(),
         }))}
+        currentUserId={session.user.id}
       />
     </div>
   );

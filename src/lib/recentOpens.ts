@@ -47,7 +47,10 @@ export async function getRecentOpens(
   const apps = appIds.length
     ? await prisma.portalApp.findMany({
         where: { id: { in: appIds }, isActive: true },
-        include: { departments: { select: { id: true, name: true } } },
+        include: {
+          departments: { select: { id: true, name: true } },
+          grants: { select: { userId: true } },
+        },
       })
     : [];
   const appMap = new Map(apps.map((a) => [a.id, a]));

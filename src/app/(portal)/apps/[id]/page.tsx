@@ -23,11 +23,14 @@ export default async function AppPage({ params }: Props) {
 
   const app = await prisma.portalApp.findUnique({
     where: { id },
-    include: { departments: { select: { id: true, name: true } } },
+    include: {
+      departments: { select: { id: true, name: true } },
+      grants: { select: { userId: true } },
+    },
   });
   if (!app || !app.isActive) notFound();
 
-  // Combined role + department check.
+  // Full access-policy check (allStaff / departments / individual grants).
   if (!canAccessApp(session.user, app)) {
     const reason =
       whyBlocked(session.user, app) || "You don't have access to this app.";

@@ -43,7 +43,7 @@ async function main() {
         "Interactive lot mapping tool for subdivision plats with live DOMO data overlay",
       icon: "map",
       url: "http://localhost:5053",
-      minRole: "EMPLOYEE",
+      allStaff: true,
       category: "tools",
       sortOrder: 1,
       openIn: "iframe",
