@@ -41,7 +41,10 @@ export default function AppTile({
   const stageBar = stageMeta(stage).bar;
 
   const content = (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-fs-warm-gray transition-all hover:shadow-md hover:ring-fs-copper/30">
+    // h-64 pins every tile to the same size regardless of content — name and
+    // description are clamped below, and mt-auto keeps the footer on the
+    // bottom edge, so short tiles and full tiles render identically.
+    <div className="group relative flex h-64 flex-col overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-fs-warm-gray transition-all hover:shadow-md hover:ring-fs-copper/30">
       {stageBar && (
         <div className={`absolute inset-x-0 top-0 h-1 ${stageBar}`} />
       )}
@@ -63,7 +66,7 @@ export default function AppTile({
           <StageBadge stage={stage} />
         </div>
       </div>
-      <h3 className="font-display text-lg font-bold text-fs-espresso">
+      <h3 className="line-clamp-2 font-display text-lg font-bold text-fs-espresso">
         {name}
       </h3>
       {description && (
