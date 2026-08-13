@@ -26,10 +26,6 @@ export default async function DashboardPage() {
     canAccessApp(session.user, app),
   );
 
-  // SOFT LAUNCH: lifecycle-stage badges are admin-only for now. Drop this
-  // gate (pass app.stage unconditionally) when stages go live for everyone.
-  const showStages = session.user.role === "ADMIN";
-
   const categories = [
     ...new Set(visibleApps.map((app) => app.category)),
   ];
@@ -93,14 +89,9 @@ export default async function DashboardPage() {
                       url={app.url}
                       category={app.category}
                       openIn={app.openIn}
-                      stage={showStages ? app.stage : undefined}
+                      stage={app.stage}
                       departments={app.departments}
-                      // SOFT LAUNCH: "New" badge is admin-only for now —
-                      // remove the role check to show it to everyone.
-                      isNew={
-                        session.user.role === "ADMIN" &&
-                        isNewApp(app.createdAt)
-                      }
+                      isNew={isNewApp(app.createdAt)}
                     />
                   ))}
               </div>

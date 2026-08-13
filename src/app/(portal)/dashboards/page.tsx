@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessApp } from "@/lib/roles";
+import { isNewApp } from "@/lib/releaseNotes";
 import { redirect } from "next/navigation";
 import { BarChart3 } from "lucide-react";
 import AppTile from "@/components/AppTile";
@@ -24,10 +25,6 @@ export default async function DashboardsPage() {
   const visibleApps = apps.filter((app) =>
     canAccessApp(session.user, app),
   );
-
-  // SOFT LAUNCH: lifecycle-stage badges are admin-only for now. Drop this
-  // gate (pass app.stage unconditionally) when stages go live for everyone.
-  const showStages = session.user.role === "ADMIN";
 
   const categories = [...new Set(visibleApps.map((app) => app.category))];
 
@@ -76,8 +73,9 @@ export default async function DashboardsPage() {
                       url={app.url}
                       category={app.category}
                       openIn={app.openIn}
-                      stage={showStages ? app.stage : undefined}
+                      stage={app.stage}
                       departments={app.departments}
+                      isNew={isNewApp(app.createdAt)}
                     />
                   ))}
               </div>
