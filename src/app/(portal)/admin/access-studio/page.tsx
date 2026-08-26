@@ -15,12 +15,13 @@ export default async function AccessStudioPage() {
   // Admin-only feature.
   if (session.user.role !== "ADMIN") redirect("/dashboard");
 
-  const [apps, departments, users] = await Promise.all([
+  const [apps, departments, users, tags] = await Promise.all([
     // Include disabled apps — they're managed here too (shown dimmed).
     prisma.portalApp.findMany({
       include: {
         departments: { select: { id: true } },
         grants: { select: { userId: true } },
+        tags: { select: { id: true } },
       },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
@@ -38,6 +39,11 @@ export default async function AccessStudioPage() {
         departments: { select: { id: true } },
       },
       orderBy: { name: "asc" },
+    }),
+    // Navigation tags for the app editor's tag picker (admin-assigned here).
+    prisma.tag.findMany({
+      select: { id: true, name: true, displayName: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
   ]);
 
@@ -65,7 +71,9 @@ export default async function AccessStudioPage() {
           allStaff: a.allStaff,
           deptIds: a.departments.map((d) => d.id),
           userIds: a.grants.map((g) => g.userId),
+          tagIds: a.tags.map((t) => t.id),
         }))}
+        tags={tags}
         departments={departments.map((d) => ({
           id: d.id,
           name: d.name,

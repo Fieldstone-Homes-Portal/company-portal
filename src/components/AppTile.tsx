@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Star } from "lucide-react";
 import { appIcon } from "@/lib/appIcons";
 import StageBadge, { stageMeta } from "@/components/StageBadge";
 
@@ -21,6 +22,19 @@ interface AppTileProps {
   // True for apps registered within the last NEW_APP_WINDOW_DAYS —
   // shows a copper "New" badge next to the category chip.
   isNew?: boolean;
+  // Publisher tags on the app. When provided (the Toolbox), tag chips
+  // replace the legacy category chip and are clickable filters. Pages that
+  // don't pass tags (e.g. /dashboards) keep the category chip unchanged.
+  tags?: { name: string; displayName: string }[];
+  // Toggles the tag in the Toolbox filter state. Chips render as plain
+  // labels when omitted.
+  onTagClick?: (tagName: string) => void;
+  // Filter keys currently active — matching chips render highlighted.
+  selectedTags?: string[];
+  // Favorites star. The star only renders when onToggleFavorite is provided
+  // (i.e. on the Toolbox); existing pages are untouched.
+  favorited?: boolean;
+  onToggleFavorite?: (appId: string) => void;
 }
 
 export default function AppTile({
@@ -33,12 +47,18 @@ export default function AppTile({
   stage = "DEPLOYED",
   departments = [],
   isNew = false,
+  tags,
+  onTagClick,
+  selectedTags = [],
+  favorited = false,
+  onToggleFavorite,
 }: AppTileProps) {
   const Icon = appIcon(icon);
   const restricted = departments.length > 0;
   // Stage-colored accent bar across the top of the tile — a not-yet-deployed
   // flag that reads at a glance. DEPLOYED has no bar (mature is the norm).
   const stageBar = stageMeta(stage).bar;
+  const showTags = tags !== undefined;
 
   const content = (
     // h-64 pins every tile to the same size regardless of content — name and
@@ -59,9 +79,35 @@ export default function AppTile({
                 New
               </span>
             )}
-            <span className="rounded-full bg-fs-warm-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fs-copper">
-              {category}
-            </span>
+            {!showTags && (
+              <span className="rounded-full bg-fs-warm-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-fs-copper">
+                {category}
+              </span>
+            )}
+            {onToggleFavorite && (
+              <button
+                type="button"
+                aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
+                title={favorited ? "Remove from favorites" : "Add to favorites"}
+                onClick={(e) => {
+                  // The whole tile is a link — keep the star from opening it.
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleFavorite(id);
+                }}
+                className={`rounded-full p-1 transition-colors ${
+                  favorited
+                    ? "text-fs-copper"
+                    : "text-fs-warm-gray hover:text-fs-copper"
+                }`}
+              >
+                <Star
+                  size={16}
+                  fill={favorited ? "currentColor" : "none"}
+                  strokeWidth={2}
+                />
+              </button>
+            )}
           </div>
           <StageBadge stage={stage} />
         </div>
@@ -74,7 +120,51 @@ export default function AppTile({
           {description}
         </p>
       )}
-      <div className="mt-auto flex items-end justify-between gap-3 pt-4">
+      {showTags && tags.length > 0 && (
+        // Single row pinned above the footer; overflow beyond 2 chips is
+        // summarized as "+N" so tall tag lists never blow the h-64 tile.
+        <div className="mt-auto flex items-center gap-1.5 overflow-hidden pt-3">
+          {tags.slice(0, 2).map((tag) => {
+            const active = selectedTags.includes(tag.name);
+            const chipClass = `shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+              active
+                ? "bg-fs-espresso text-white"
+                : "bg-fs-warm-white text-fs-copper hover:bg-fs-espresso hover:text-white"
+            }`;
+            return onTagClick ? (
+              <button
+                key={tag.name}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onTagClick(tag.name);
+                }}
+                className={chipClass}
+              >
+                {tag.displayName}
+              </button>
+            ) : (
+              <span key={tag.name} className={chipClass}>
+                {tag.displayName}
+              </span>
+            );
+          })}
+          {tags.length > 2 && (
+            <span
+              className="shrink-0 text-[10px] font-semibold text-fs-copper-light"
+              title={tags.slice(2).map((t) => t.displayName).join(", ")}
+            >
+              +{tags.length - 2}
+            </span>
+          )}
+        </div>
+      )}
+      <div
+        className={`${
+          showTags && tags.length > 0 ? "" : "mt-auto"
+        } flex items-end justify-between gap-3 pt-3`}
+      >
         <span className="inline-flex items-center text-xs font-semibold text-fs-copper group-hover:text-fs-espresso">
           Open app &rarr;
         </span>
