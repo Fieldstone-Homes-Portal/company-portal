@@ -18,7 +18,8 @@ export default function SignInButton() {
     const callbackInput = document.createElement("input");
     callbackInput.type = "hidden";
     callbackInput.name = "callbackUrl";
-    callbackInput.value = "/dashboard";
+    // Home is the landing page after sign-in (tools live one click away).
+    callbackInput.value = "/home";
     form.appendChild(callbackInput);
 
     document.body.appendChild(form);

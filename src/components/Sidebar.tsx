@@ -5,18 +5,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  LayoutDashboard,
   Link2,
   Settings,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Boxes,
   Building2,
   Shield,
   BarChart3,
   Megaphone,
+  Tags,
 } from "lucide-react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import SidebarTagNav from "@/components/SidebarTagNav";
+import type { ToolboxData } from "@/lib/toolboxData";
 
 interface SidebarProps {
   role: string;
@@ -24,17 +26,16 @@ interface SidebarProps {
   // above the CORNERSTONE footer tag. Kept generic so we can drop in
   // additional live data points later without re-plumbing the sidebar.
   footerSlot?: React.ReactNode;
+  // Access-scoped tag-navigation data (see getToolboxData). Drives the
+  // tag nav that replaced the old Toolbox/Dashboards links — tools and
+  // dashboards now live in one bucket, navigated by tags.
+  toolbox?: ToolboxData;
 }
 
-const employeeNav = [
-  // Home is the landing page for everyone after sign-in.
-  { label: "Home", href: "/home", icon: Home },
-  // "Toolbox" is the old "Dashboard" page — the grid of apps. Renamed
-  // to free up the "Dashboard" name for actual data dashboards.
-  { label: "Toolbox", href: "/dashboard", icon: Boxes },
-  { label: "Dashboards", href: "/dashboards", icon: LayoutDashboard },
-  { label: "Links", href: "/links", icon: Link2 },
-];
+// Home sits above the tag navigation; Links is pinned to the bottom of the
+// nav pane (above Management).
+const homeItem = { label: "Home", href: "/home", icon: Home };
+const linksItem = { label: "Links", href: "/links", icon: Link2 };
 
 // Management links — ADMIN-only, like everything under /admin.
 // Access Studio replaced the old Manage Apps / Manage Users / App Access
@@ -42,15 +43,22 @@ const employeeNav = [
 const managerNav = [
   { label: "Access Studio", href: "/admin/access-studio", icon: Shield },
   { label: "Departments", href: "/admin/departments", icon: Building2 },
+  // Navigation tags for the Toolbox (create/rename/merge/delete).
+  { label: "Tags", href: "/admin/tags", icon: Tags },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   // Write/edit the "What's New" announcements (auto-seeded on new apps).
   { label: "Release Notes", href: "/admin/releases", icon: Megaphone },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
-export default function Sidebar({ role, footerSlot }: SidebarProps) {
+export default function Sidebar({ role, footerSlot, toolbox }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  // Management is collapsed by default so the tag navigation gets the room;
+  // admins click the header to expand it (starts open on /admin pages).
+  const [managementOpen, setManagementOpen] = useState(() =>
+    pathname.startsWith("/admin"),
+  );
   // The entire Management section is admin-only.
   const isAdmin = role === "ADMIN";
 
@@ -103,62 +111,102 @@ export default function Sidebar({ role, footerSlot }: SidebarProps) {
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="relative flex-1 space-y-1 p-3">
-        {!collapsed && (
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-fs-copper">
-            Main
-          </p>
-        )}
-        {employeeNav.map((item) => {
-          const active =
-            pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                active
-                  ? "bg-white/15 text-white shadow-sm"
-                  : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
-              } ${collapsed ? "justify-center" : ""}`}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon size={18} />
-              {!collapsed && item.label}
-            </Link>
-          );
-        })}
+      {/* Navigation — tag nav scrolls in the middle; Links (and Management
+          for admins) stay pinned to the bottom of the pane. */}
+      <nav className="relative flex min-h-0 flex-1 flex-col p-3">
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+          {[homeItem].map((item) => {
+            const active =
+              pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-white/15 text-white shadow-sm"
+                    : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
+                } ${collapsed ? "justify-center" : ""}`}
+                title={collapsed ? item.label : undefined}
+              >
+                <item.icon size={18} />
+                {!collapsed && item.label}
+              </Link>
+            );
+          })}
 
-        {isAdmin && (
-          <>
+          {/* Tag navigation — replaced the old Toolbox/Dashboards links.
+              useSearchParams inside needs a Suspense boundary. */}
+          {toolbox && (
+            <Suspense fallback={null}>
+              <SidebarTagNav toolbox={toolbox} collapsed={collapsed} />
+            </Suspense>
+          )}
+        </div>
+
+        <div className="mt-2 space-y-1 border-t border-white/10 pt-2">
+          {(() => {
+            const active =
+              pathname === linksItem.href ||
+              pathname.startsWith(linksItem.href + "/");
+            return (
+              <Link
+                href={linksItem.href}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-white/15 text-white shadow-sm"
+                    : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
+                } ${collapsed ? "justify-center" : ""}`}
+                title={collapsed ? linksItem.label : undefined}
+              >
+                <linksItem.icon size={18} />
+                {!collapsed && linksItem.label}
+              </Link>
+            );
+          })()}
+
+          {isAdmin && (
+            <>
             {!collapsed && (
-              <p className="mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-fs-copper">
+              <button
+                type="button"
+                onClick={() => setManagementOpen((o) => !o)}
+                className="mt-1 flex w-full items-center justify-between rounded-lg px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-fs-copper transition-colors hover:text-white"
+              >
                 Management
-              </p>
+                <ChevronDown
+                  size={12}
+                  className={`transition-transform ${
+                    managementOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
             )}
             {collapsed && <div className="my-4 border-t border-white/10" />}
-            {managerNav.map((item) => {
-              const active =
-            pathname === item.href || pathname.startsWith(item.href + "/");
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-white/15 text-white shadow-sm"
-                      : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
-                  } ${collapsed ? "justify-center" : ""}`}
-                  title={collapsed ? item.label : undefined}
-                >
-                  <item.icon size={18} />
-                  {!collapsed && item.label}
-                </Link>
-              );
-            })}
-          </>
-        )}
+            {(managementOpen || collapsed) &&
+              managerNav.map((item) => {
+                const active =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-white/15 text-white shadow-sm"
+                        : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
+                    } ${collapsed ? "justify-center" : ""}`}
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <item.icon size={18} />
+                    {!collapsed && item.label}
+                  </Link>
+                );
+              })}
+            </>
+          )}
+        </div>
       </nav>
 
       {/* Live data slot — sits just above the Cornerstone footer tag. */}
