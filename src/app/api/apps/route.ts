@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
   const departmentIds: string[] = Array.isArray(body.departmentIds)
     ? body.departmentIds
     : [];
+  const tagIds: string[] = Array.isArray(body.tagIds) ? body.tagIds : [];
 
   const app = await prisma.portalApp.create({
     data: {
@@ -31,10 +32,15 @@ export async function POST(req: NextRequest) {
       departments: departmentIds.length
         ? { connect: departmentIds.map((id) => ({ id })) }
         : undefined,
+      // Navigation tags (discovery only, never access).
+      tags: tagIds.length
+        ? { connect: tagIds.map((id) => ({ id })) }
+        : undefined,
     },
     include: {
       departments: { select: { id: true, name: true } },
       grants: { select: { userId: true } },
+      tags: { select: { id: true, name: true, displayName: true } },
     },
   });
 

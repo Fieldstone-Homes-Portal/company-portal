@@ -36,6 +36,14 @@ interface StudioApp {
   allStaff: boolean;
   deptIds: string[];
   userIds: string[];
+  tagIds: string[];
+}
+
+// Navigation tag available in the app editor's picker (managed /admin/tags).
+interface StudioTag {
+  id: string;
+  name: string;
+  displayName: string;
 }
 
 interface StudioDept {
@@ -113,6 +121,7 @@ const blankAppForm = {
   sortOrder: 0,
   openIn: "iframe",
   isActive: true,
+  tagIds: [] as string[],
 };
 type AppForm = typeof blankAppForm;
 
@@ -121,11 +130,13 @@ export default function AccessStudio({
   departments,
   people: initialPeople,
   currentUserId,
+  tags = [],
 }: {
   apps: StudioApp[];
   departments: StudioDept[];
   people: StudioPerson[];
   currentUserId: string;
+  tags?: StudioTag[];
 }) {
   const router = useRouter();
   const [apps, setApps] = useState(initialApps);
@@ -318,6 +329,7 @@ export default function AccessStudio({
         sortOrder: app.sortOrder,
         openIn: app.openIn,
         isActive: app.isActive,
+        tagIds: app.tagIds,
       });
       setEditingAppId(app.id);
     } else {
@@ -354,6 +366,7 @@ export default function AccessStudio({
       allStaff: saved.allStaff,
       deptIds: (saved.departments || []).map((d: { id: string }) => d.id),
       userIds: (saved.grants || []).map((g: { userId: string }) => g.userId),
+      tagIds: (saved.tags || []).map((t: { id: string }) => t.id),
     };
     if (isNew) {
       setApps((a) => [...a, asStudioApp]);
@@ -1158,6 +1171,47 @@ export default function AccessStudio({
                   <option value="tool">Toolbox</option>
                   <option value="dashboard">Dashboards</option>
                 </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>
+                  Tags{" "}
+                  <span className="text-fs-copper-light">
+                    — navigation only, never access. Manage tags under
+                    Admin → Tags.
+                  </span>
+                </label>
+                {tags.length === 0 ? (
+                  <p className="rounded-xl bg-fs-warm-white px-4 py-2.5 text-xs text-fs-copper-light">
+                    No tags exist yet — create some under Admin → Tags.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 rounded-xl border border-fs-warm-gray bg-fs-warm-white p-3">
+                    {tags.map((tag) => {
+                      const on = appForm.tagIds.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() =>
+                            setAppForm({
+                              ...appForm,
+                              tagIds: on
+                                ? appForm.tagIds.filter((t) => t !== tag.id)
+                                : [...appForm.tagIds, tag.id],
+                            })
+                          }
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                            on
+                              ? "bg-fs-espresso text-white"
+                              : "bg-white text-fs-copper ring-1 ring-fs-warm-gray hover:ring-fs-copper"
+                          }`}
+                        >
+                          {tag.displayName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <label className="flex items-center gap-2 text-sm text-fs-espresso">

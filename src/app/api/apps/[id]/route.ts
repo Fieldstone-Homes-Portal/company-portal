@@ -16,13 +16,17 @@ export async function PUT(req: NextRequest, context: Context) {
   const { id } = await context.params;
   const body = await req.json();
 
-  // Pull departmentIds out before spreading the rest. The relation needs a
+  // Pull relation id-lists out before spreading the rest. Relations need a
   // different Prisma write shape ({ set: [...] }) than scalar fields.
-  const { departmentIds, ...scalarUpdates } = body as Record<string, unknown>;
+  const { departmentIds, tagIds, ...scalarUpdates } = body as Record<
+    string,
+    unknown
+  >;
   // Strip out fields that aren't valid Prisma columns (defensive against
   // stray client-side fields like `departments` arriving via PUT).
   delete (scalarUpdates as Record<string, unknown>).departments;
   delete (scalarUpdates as Record<string, unknown>).grants;
+  delete (scalarUpdates as Record<string, unknown>).tags;
   // minRole is retired — ignore it if an old client still sends it.
   delete (scalarUpdates as Record<string, unknown>).minRole;
 
@@ -37,10 +41,14 @@ export async function PUT(req: NextRequest, context: Context) {
             },
           }
         : {}),
+      ...(Array.isArray(tagIds)
+        ? { tags: { set: (tagIds as string[]).map((tid) => ({ id: tid })) } }
+        : {}),
     },
     include: {
       departments: { select: { id: true, name: true } },
       grants: { select: { userId: true } },
+      tags: { select: { id: true, name: true, displayName: true } },
     },
   });
 

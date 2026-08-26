@@ -52,6 +52,8 @@ model User {
   // AppUsageSession below). Powers /admin/analytics.
   openEvents    AppOpenEvent[]
   usageSessions AppUsageSession[]
+  // Starred apps (see Favorite) — the one piece of tagging users control.
+  favorites     Favorite[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -121,6 +123,10 @@ model PortalApp {
   grants      AppGrant[]
   // "What's New" entries about this app (see ReleaseNote below).
   releaseNotes ReleaseNote[]
+  // Navigation tags (see Tag below). Discovery only — NEVER access control.
+  tags        Tag[]    @relation("AppTags")
+  // Users who starred this app (see Favorite below).
+  favoritedBy Favorite[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -184,6 +190,46 @@ model Department {
   apps        PortalApp[] @relation("AppDepartments")
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+}
+
+// Tag: flat, multi-valued navigation labels for portal apps — the replacement
+// for the old single `category` string (which is kept but deprecated). An app
+// carries as many tags as are true about it (Plat Studio = map + sales +
+// construction + land). Tags drive the Toolbox sidebar, filtering, and search.
+//
+// Discovery ONLY — tags never gate access. Who can open an app is decided
+// exclusively by allStaff / departments / grants (see canAccessApp), and every
+// tag count a user sees is computed from apps they can already access.
+//
+// Publisher-managed: only ADMINs create, rename, merge, or delete tags
+// (/admin/tags) and assign them to apps (Access Studio app editor). The two
+// "smart tags" (My Most Used, Company Hits) and Favorites are computed at
+// read time and deliberately have NO rows here.
+model Tag {
+  id          String      @id @default(cuid())
+  // Unique lowercase slug (e.g. "customer-service") — stable identifier used
+  // in filter state. displayName is what users see and can be renamed freely.
+  name        String      @unique
+  displayName String
+  sortOrder   Int         @default(0)
+  apps        PortalApp[] @relation("AppTags")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// Favorite: a user's starred app — the ONE piece of tagging users control
+// themselves (toggled via the star on app tiles). Surfaces as the ★ Favorites
+// pseudo-tag in the Toolbox sidebar. One row per (user, app).
+model Favorite {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appId     String
+  app       PortalApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, appId])
+  @@index([userId])
 }
 
 model PortalFile {
