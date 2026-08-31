@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Suspense, useState } from "react";
 import SidebarTagNav from "@/components/SidebarTagNav";
+import SidebarSearch from "@/components/SidebarSearch";
 import type { ToolboxData } from "@/lib/toolboxData";
 
 interface SidebarProps {
@@ -114,6 +115,15 @@ export default function Sidebar({ role, footerSlot, toolbox }: SidebarProps) {
       {/* Navigation — tag nav scrolls in the middle; Links (and Management
           for admins) stay pinned to the bottom of the pane. */}
       <nav className="relative flex min-h-0 flex-1 flex-col p-3">
+        {/* Pinned above the scroll area so it is reachable from any page and
+            never scrolls out of view behind a long tag list. */}
+        <Suspense fallback={null}>
+          <SidebarSearch
+            collapsed={collapsed}
+            onExpand={() => setCollapsed(false)}
+          />
+        </Suspense>
+
         <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
           {[homeItem].map((item) => {
             const active =
