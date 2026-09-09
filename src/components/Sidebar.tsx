@@ -15,6 +15,7 @@ import {
   BarChart3,
   Megaphone,
   Tags,
+  Inbox,
 } from "lucide-react";
 import { Suspense, useState } from "react";
 import SidebarTagNav from "@/components/SidebarTagNav";
@@ -41,6 +42,9 @@ const linksItem = { label: "Links", href: "/links", icon: Link2 };
 // Access Studio replaced the old Manage Apps / Manage Users / App Access
 // pages: apps, access grants, and people are all managed there now.
 const managerNav = [
+  // Request Center sub-app (Office / Marketing / IT requests) — parked here
+  // for the admin-only soft launch; graduates to a PortalApp tile later.
+  { label: "Request Center", href: "/admin/request-center", icon: Inbox },
   { label: "Access Studio", href: "/admin/access-studio", icon: Shield },
   { label: "Departments", href: "/admin/departments", icon: Building2 },
   // Navigation tags for the Toolbox (create/rename/merge/delete).
