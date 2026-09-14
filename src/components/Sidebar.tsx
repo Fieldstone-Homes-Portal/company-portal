@@ -36,16 +36,14 @@ interface SidebarProps {
 // Home sits above the tag navigation; Links is pinned to the bottom of the
 // nav pane (above Management).
 const homeItem = { label: "Home", href: "/home", icon: Home };
-const requestsItem = { label: "Requests", href: "/requests", icon: Inbox };
 const linksItem = { label: "Links", href: "/links", icon: Link2 };
 
 // Management links — ADMIN-only, like everything under /admin.
 // Access Studio replaced the old Manage Apps / Manage Users / App Access
 // pages: apps, access grants, and people are all managed there now.
 const managerNav = [
-  // Request Center sub-app (Office / Marketing / IT requests) — parked here
-  // for the admin-only soft launch; graduates to a PortalApp tile later.
   { label: "Access Studio", href: "/admin/access-studio", icon: Shield },
+  { label: "Requests", href: "/admin/request-center", icon: Inbox },
   { label: "Departments", href: "/admin/departments", icon: Building2 },
   // Navigation tags for the Toolbox (create/rename/merge/delete).
   { label: "Tags", href: "/admin/tags", icon: Tags },
@@ -129,7 +127,7 @@ export default function Sidebar({ role, footerSlot, toolbox }: SidebarProps) {
           for admins) stay pinned to the bottom of the pane. */}
       <nav className="relative flex min-h-0 flex-1 flex-col p-3">
         <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-          {[homeItem, requestsItem].map((item) => {
+          {[homeItem].map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(item.href + "/");
             return (

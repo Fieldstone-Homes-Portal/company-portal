@@ -48,3 +48,10 @@ category-manager permissions. Set `REQUEST_CENTER_URL` and the existing portal i
 
 Required migration: `20260914193000_access_groups`. The existing `GRAPH_*` app credentials need read
 permissions for group listing and user transitive memberships. No Microsoft directory writes are used.
+
+### Request Center preview
+
+Requests remains under Management at `/admin/request-center`, restricted to
+ADMIN users. The former `/requests` link redirects admins there and sends
+non-admins home. Request Center also enforces its production preview allowlist
+so old iframe links cannot admit employees before launch.
