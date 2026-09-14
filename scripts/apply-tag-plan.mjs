@@ -12,7 +12,7 @@ async function main() {
   const before = await db.portalApp.findMany({where:{id:{in:plan.map(x=>x.id)}},select});
   if (before.length !== plan.length || plan.some(x=>!before.some(a=>a.id===x.id && a.name.trim()===x.name))) throw new Error('Catalogue changed; inspect before applying');
   fs.mkdirSync(path.dirname(process.env.TAG_BACKUP_PATH), { recursive:true });
-  fs.writeFileSync(process.env.TAG_BACKUP_PATH, JSON.stringify(before,null,2), {mode:0o600,flag:'wx'});
+  fs.writeFileSync(process.env.TAG_BACKUP_PATH, JSON.stringify(before.map(({id,name,tags})=>({id,name,tags})),null,2), {mode:0o600,flag:'wx'});
   await db.$transaction(async tx => {
     const tags = new Map();
     for (const label of new Set(plan.flatMap(x=>x.tags))) {
