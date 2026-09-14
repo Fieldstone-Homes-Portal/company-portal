@@ -30,7 +30,7 @@ const request = (body: unknown) =>
   });
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.auth.mockResolvedValue({ user: { role: "ADMIN" } });
+  mocks.auth.mockResolvedValue({ user: { role: "ADMIN", email: "tim@fieldstonehomes.com" } });
 });
 test("employees and managers cannot change access groups", async () => {
   for (const role of ["EMPLOYEE", "MANAGER"]) {
@@ -57,4 +57,13 @@ test("Microsoft groups cannot be rewritten as custom memberships", async () => {
     ).status,
   ).toBe(400);
   expect(mocks.update).not.toHaveBeenCalled();
+});
+
+test("other administrators cannot edit or sync access groups", async () => {
+  mocks.auth.mockResolvedValue({ user: { role: "ADMIN", email: "other@fieldstonehomes.com" } });
+  for (const body of [{ name: "Unauthorized", userIds: [] }, { action: "sync" }]) {
+    expect((await POST(request(body))).status).toBe(403);
+  }
+  expect(mocks.graphPages).not.toHaveBeenCalled();
+  expect(mocks.create).not.toHaveBeenCalled();
 });

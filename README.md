@@ -55,3 +55,7 @@ Requests remains under Management at `/admin/request-center`, restricted to
 ADMIN users. The former `/requests` link redirects admins there and sends
 non-admins home. Request Center also enforces its production preview allowlist
 so old iframe links cannot admit employees before launch.
+
+### Access Studio administrators
+
+Access Studio and its access-changing APIs are restricted to Tim (`tim@fieldstonehomes.com`) and Skyler (`skyler@fieldstonehomes.com`), each with the ADMIN role. The same restriction protects app policies, user roles, and access-group membership edits. Other administrators do not inherit these privileges. The allowlist lives in `src/lib/accessStudioPolicy.ts`.

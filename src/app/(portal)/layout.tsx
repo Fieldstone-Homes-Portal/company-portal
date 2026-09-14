@@ -1,3 +1,4 @@
+import { canManageAccess } from "@/lib/accessStudioPolicy";
 import { auth } from "@/lib/auth";
 import { getToolboxData } from "@/lib/toolboxData";
 import { redirect } from "next/navigation";
@@ -21,6 +22,7 @@ export default async function PortalLayout({
     <div className="flex h-full">
       <Sidebar
         role={session.user.role}
+        canManageAccess={canManageAccess(session.user)}
         footerSlot={<MortgageRateTag />}
         toolbox={toolbox}
       />

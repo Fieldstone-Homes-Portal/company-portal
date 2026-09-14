@@ -1,3 +1,4 @@
+import { canManageAccess } from "@/lib/accessStudioPolicy";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -9,7 +10,7 @@ export default async function AccessStudioPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
   // Admin-only feature.
-  if (session.user.role !== "ADMIN") redirect("/dashboard");
+  if (!canManageAccess(session.user)) redirect("/dashboard");
 
   const [apps, departments, users, tags] = await Promise.all([
     // Include disabled apps — they're managed here too (shown dimmed).

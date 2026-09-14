@@ -1,3 +1,4 @@
+import { canManageAccess } from "@/lib/accessStudioPolicy";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { graphPages } from "@/lib/accessGroups";
@@ -5,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (session?.user?.role !== "ADMIN")
+  if (!canManageAccess(session?.user))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   try {
     const body = await req.json();

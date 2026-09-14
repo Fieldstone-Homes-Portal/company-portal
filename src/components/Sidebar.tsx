@@ -23,6 +23,7 @@ import type { ToolboxData } from "@/lib/toolboxData";
 
 interface SidebarProps {
   role: string;
+  canManageAccess?: boolean;
   // Async server-rendered slot composed in by the portal layout. Lives
   // above the CORNERSTONE footer tag. Kept generic so we can drop in
   // additional live data points later without re-plumbing the sidebar.
@@ -53,7 +54,7 @@ const managerNav = [
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
-export default function Sidebar({ role, footerSlot, toolbox }: SidebarProps) {
+export default function Sidebar({ role, footerSlot, toolbox, canManageAccess = false }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   // Management is collapsed by default so the tag navigation gets the room;
@@ -196,7 +197,7 @@ export default function Sidebar({ role, footerSlot, toolbox }: SidebarProps) {
               )}
               {collapsed && <div className="my-4 border-t border-white/10" />}
               {(managementOpen || collapsed) &&
-                managerNav.map((item) => {
+                managerNav.filter((item) => canManageAccess || !["/admin/access-studio", "/admin/departments"].includes(item.href)).map((item) => {
                   const active =
                     pathname === item.href ||
                     pathname.startsWith(item.href + "/");

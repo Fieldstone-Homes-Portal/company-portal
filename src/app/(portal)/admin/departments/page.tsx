@@ -1,6 +1,6 @@
+import { canManageAccess } from "@/lib/accessStudioPolicy";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasMinRole } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import DepartmentManager from "./DepartmentManager";
@@ -9,7 +9,7 @@ export default async function AdminDepartmentsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
   // Only ADMINs can manage departments — they affect access for everyone.
-  if (!hasMinRole(session.user.role, "ADMIN")) redirect("/dashboard");
+  if (!canManageAccess(session.user)) redirect("/dashboard");
 
   const departments = await prisma.department.findMany({
     orderBy: { name: "asc" },

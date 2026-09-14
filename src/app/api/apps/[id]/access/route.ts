@@ -1,3 +1,4 @@
+import { canManageAccess } from "@/lib/accessStudioPolicy";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
@@ -15,7 +16,7 @@ interface Context {
  */
 export async function PUT(req: NextRequest, context: Context) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!session?.user || !canManageAccess(session.user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -85,7 +86,7 @@ export async function PUT(req: NextRequest, context: Context) {
 /** Add/remove selected grants atomically; never overwrite unrelated concurrent changes. */
 export async function PATCH(req: NextRequest, context: Context) {
   const session = await auth();
-  if (session?.user?.role !== "ADMIN")
+  if (!session?.user || !canManageAccess(session.user))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   try {
     const { id } = await context.params;

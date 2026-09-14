@@ -11,7 +11,7 @@ vi.mock("@/lib/auth", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/prisma", () => ({
   prisma: { $transaction: mocks.transaction },
 }));
-import { PATCH } from "./route";
+import { PATCH, PUT } from "./route";
 const request = (body: unknown) =>
   new NextRequest("http://localhost/api/apps/app/access", {
     method: "PATCH",
@@ -21,7 +21,7 @@ const context = { params: Promise.resolve({ id: "app" }) };
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.auth.mockResolvedValue({
-    user: { role: "ADMIN", email: "admin@example.com" },
+    user: { role: "ADMIN", email: "tim@fieldstonehomes.com" },
   });
   mocks.transaction.mockImplementation(
     async (fn: (tx: unknown) => Promise<unknown>) =>
@@ -60,7 +60,7 @@ test("bulk grant connects groups without replacing existing policy", async () =>
     data: { departments: { connect: [{ id: "g" }] } },
   });
   expect(mocks.createMany).toHaveBeenCalledWith({
-    data: [{ appId: "app", userId: "u", grantedBy: "admin@example.com" }],
+    data: [{ appId: "app", userId: "u", grantedBy: "tim@fieldstonehomes.com" }],
     skipDuplicates: true,
   });
   expect(mocks.deleteMany).not.toHaveBeenCalled();
@@ -87,5 +87,13 @@ test("bad group and user selection fails validation before writing", async () =>
       )
     ).status,
   ).toBe(400);
+  expect(mocks.transaction).not.toHaveBeenCalled();
+});
+
+test("other administrators cannot replace or incrementally change access", async () => {
+  mocks.auth.mockResolvedValue({ user: { role: "ADMIN", email: "other@fieldstonehomes.com" } });
+  for (const handler of [PATCH, PUT]) {
+    expect((await handler(request({ action: "grant", userIds: ["user"], deptIds: [] }), context)).status).toBe(403);
+  }
   expect(mocks.transaction).not.toHaveBeenCalled();
 });

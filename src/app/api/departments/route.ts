@@ -1,6 +1,6 @@
+import { canManageAccess } from "@/lib/accessStudioPolicy";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasMinRole } from "@/lib/roles";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET — list all departments. Any signed-in user can read (we use it
@@ -19,7 +19,7 @@ export async function GET() {
 // POST — create a new department. Admin-only.
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user || !hasMinRole(session.user.role, "ADMIN")) {
+  if (!session?.user || !canManageAccess(session.user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json();

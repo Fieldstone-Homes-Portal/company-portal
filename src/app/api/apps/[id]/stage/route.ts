@@ -1,3 +1,4 @@
+import { canManageAccess } from "@/lib/accessStudioPolicy";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AppStage } from "@prisma/client";
@@ -16,7 +17,7 @@ interface Context {
 // Admin-only, matching Access Studio itself.
 export async function PATCH(req: NextRequest, context: Context) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!session?.user || !canManageAccess(session.user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

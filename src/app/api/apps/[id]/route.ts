@@ -1,6 +1,6 @@
+import { canManageAccess } from "@/lib/accessStudioPolicy";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasMinRole } from "@/lib/roles";
 import { NextRequest, NextResponse } from "next/server";
 
 interface Context {
@@ -9,7 +9,7 @@ interface Context {
 
 export async function PUT(req: NextRequest, context: Context) {
   const session = await auth();
-  if (!session?.user || !hasMinRole(session.user.role, "ADMIN")) {
+  if (!session?.user || !canManageAccess(session.user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -57,7 +57,7 @@ export async function PUT(req: NextRequest, context: Context) {
 
 export async function DELETE(_req: NextRequest, context: Context) {
   const session = await auth();
-  if (!session?.user || !hasMinRole(session.user.role, "ADMIN")) {
+  if (!session?.user || !canManageAccess(session.user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
