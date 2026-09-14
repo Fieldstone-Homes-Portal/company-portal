@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Shield, User } from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 interface HeaderProps {

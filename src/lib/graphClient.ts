@@ -32,9 +32,16 @@ async function getToken(): Promise<string> {
   });
   const res = await fetch(
     `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
-    { method: "POST", body, headers: { "Content-Type": "application/x-www-form-urlencoded" } },
+    {
+      method: "POST",
+      body,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    },
   );
-  if (!res.ok) throw new Error(`Graph token request failed: ${res.status} ${await res.text()}`);
+  if (!res.ok)
+    throw new Error(
+      `Graph token request failed: ${res.status} ${await res.text()}`,
+    );
   const j = (await res.json()) as { access_token: string; expires_in?: number };
   tokenCache = { value: j.access_token, exp: now + (j.expires_in ?? 3600) };
   return j.access_token;
@@ -47,22 +54,33 @@ export async function graphGet<T>(
   headers?: Record<string, string>,
 ): Promise<T> {
   const url = new URL(GRAPH + path);
-  if (params) for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  if (params)
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   // Retry on throttling (429) and transient server errors, honoring Retry-After.
   // Graph throttles bursts (e.g. fetching many group threads' posts at once).
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${await getToken()}`, ...(headers ?? {}) },
+      headers: {
+        Authorization: `Bearer ${await getToken()}`,
+        ...(headers ?? {}),
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
     });
     if (res.ok) return (await res.json()) as T;
     const retryable = res.status === 429 || res.status >= 500;
     if (retryable && attempt < 2) {
       const ra = Number(res.headers.get("Retry-After"));
-      const waitMs = Number.isFinite(ra) && ra > 0 ? ra * 1000 : 400 * (attempt + 1);
+      const waitMs =
+        Number.isFinite(ra) && ra > 0
+          ? Math.min(ra * 1000, 10000)
+          : 400 * (attempt + 1);
       await new Promise((r) => setTimeout(r, waitMs));
       continue;
     }
-    throw new Error(`Graph GET ${path} failed: ${res.status} ${await res.text()}`);
+    throw new Error(
+      `Graph GET ${path} failed: ${res.status} ${await res.text()}`,
+    );
   }
 }
 
@@ -79,6 +97,7 @@ export async function groupId(): Promise<string> {
     $select: "id,displayName,mail",
   });
   const vals = data.value ?? [];
-  if (vals.length === 0) throw new Error(`No M365 group found with mail '${mail}'`);
+  if (vals.length === 0)
+    throw new Error(`No M365 group found with mail '${mail}'`);
   return (groupIdCache = vals[0].id);
 }

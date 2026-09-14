@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Star } from "lucide-react";
-import { appIcon } from "@/lib/appIcons";
+import { AppIcon } from "@/lib/appIcons";
 import StageBadge, { stageMeta } from "@/components/StageBadge";
 
 interface AppTileProps {
@@ -53,7 +53,6 @@ export default function AppTile({
   favorited = false,
   onToggleFavorite,
 }: AppTileProps) {
-  const Icon = appIcon(icon);
   const restricted = departments.length > 0;
   // Stage-colored accent bar across the top of the tile — a not-yet-deployed
   // flag that reads at a glance. DEPLOYED has no bar (mature is the norm).
@@ -70,7 +69,7 @@ export default function AppTile({
       )}
       <div className="mb-4 flex items-start justify-between">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-fs-warm-white text-fs-copper transition-colors group-hover:bg-fs-espresso group-hover:text-white">
-          <Icon size={24} />
+          <AppIcon name={icon} size={24} />
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-1.5">
@@ -87,7 +86,9 @@ export default function AppTile({
             {onToggleFavorite && (
               <button
                 type="button"
-                aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
+                aria-label={
+                  favorited ? "Remove from favorites" : "Add to favorites"
+                }
                 title={favorited ? "Remove from favorites" : "Add to favorites"}
                 onClick={(e) => {
                   // The whole tile is a link — keep the star from opening it.
@@ -153,7 +154,10 @@ export default function AppTile({
           {tags.length > 2 && (
             <span
               className="shrink-0 text-[10px] font-semibold text-fs-copper-light"
-              title={tags.slice(2).map((t) => t.displayName).join(", ")}
+              title={tags
+                .slice(2)
+                .map((t) => t.displayName)
+                .join(", ")}
             >
               +{tags.length - 2}
             </span>

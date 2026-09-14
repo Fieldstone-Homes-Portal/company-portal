@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Sparkles, ArrowRight, X } from "lucide-react";
-import { appIcon } from "@/lib/appIcons";
+import { AppIcon } from "@/lib/appIcons";
 import type { WhatsNewItem } from "@/lib/releaseNotes";
 
 function NoteCard({
@@ -13,7 +13,6 @@ function NoteCard({
   item: WhatsNewItem;
   onOpen: () => void;
 }) {
-  const Icon = appIcon(item.appIcon);
   // Clicking a card only expands the note — never jumps to the app.
   // Navigation lives on the explicit "Open app" button in the modal.
   return (
@@ -22,7 +21,11 @@ function NoteCard({
       className="group flex h-full w-full items-start gap-3 rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-fs-warm-gray transition-all hover:shadow-md hover:ring-fs-copper/30"
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-fs-warm-white text-fs-copper transition-colors group-hover:bg-fs-espresso group-hover:text-white">
-        {item.appName ? <Icon size={22} /> : <Sparkles size={22} />}
+        {item.appName ? (
+          <AppIcon name={item.appIcon} size={22} />
+        ) : (
+          <Sparkles size={22} />
+        )}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -69,8 +72,6 @@ export default function WhatsNewSection({ items }: { items: WhatsNewItem[] }) {
   // an empty shell.
   if (items.length === 0) return null;
 
-  const OpenIcon = open ? appIcon(open.appIcon) : Sparkles;
-
   return (
     <section>
       <div className="mb-4 flex items-center justify-between">
@@ -103,7 +104,11 @@ export default function WhatsNewSection({ items }: { items: WhatsNewItem[] }) {
             <div className="flex items-start justify-between gap-4 border-b border-fs-warm-gray px-6 py-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-fs-warm-white text-fs-copper">
-                  {open.appName ? <OpenIcon size={22} /> : <Sparkles size={22} />}
+                  {open.appName ? (
+                    <AppIcon name={open?.appIcon} size={22} />
+                  ) : (
+                    <Sparkles size={22} />
+                  )}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">

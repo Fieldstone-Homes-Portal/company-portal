@@ -1,0 +1,197 @@
+[
+  {
+    "id": "cmrnypj0q004irz5fkdqrux8c",
+    "name": "Blueprint",
+    "tags": [
+      "IT",
+      "All Staff",
+      "Tool",
+      "AI"
+    ]
+  },
+  {
+    "id": "cmsgmbrac00efmx57ks4sboto",
+    "name": "Cash Requirement",
+    "tags": [
+      "Accounting",
+      "Finance",
+      "Tool",
+      "Reports"
+    ]
+  },
+  {
+    "id": "cmqpmddmr0000n74oqfgcyntp",
+    "name": "Closing Dashboard",
+    "tags": [
+      "Sales",
+      "Construction",
+      "Dashboard",
+      "Reports"
+    ]
+  },
+  {
+    "id": "cmpx5ifvy0000pa4oy8i9s8ym",
+    "name": "CPR/QMI Dashboard",
+    "tags": [
+      "Construction",
+      "Sales",
+      "Dashboard",
+      "Reports"
+    ]
+  },
+  {
+    "id": "cmq032dvq0000qn5f29ipleu3",
+    "name": "Executive Dashboard",
+    "tags": [
+      "Leadership",
+      "Finance",
+      "Dashboard",
+      "Reports"
+    ]
+  },
+  {
+    "id": "cmshqrs0000gfmx57chg9rrx1",
+    "name": "Flyer Creator",
+    "tags": [
+      "Marketing",
+      "Sales",
+      "Tool",
+      "Creation"
+    ]
+  },
+  {
+    "id": "cmprhmzmm0000pa4ogo0zd7cs",
+    "name": "Image Studio",
+    "tags": [
+      "Marketing",
+      "Sales",
+      "Tool",
+      "AI",
+      "Creation"
+    ]
+  },
+  {
+    "id": "cmsdcj9qh007xmx57wvhpiojk",
+    "name": "Invoice Due Date Tool",
+    "tags": [
+      "Accounting",
+      "Finance",
+      "Tool"
+    ]
+  },
+  {
+    "id": "cmtlrqf770137ql570qg2sm41",
+    "name": "IT Management Dashboard",
+    "tags": [
+      "IT",
+      "Tool",
+      "Dashboard"
+    ]
+  },
+  {
+    "id": "lien-waivers",
+    "name": "Lien Waivers",
+    "tags": [
+      "Accounting",
+      "Finance",
+      "Tool"
+    ]
+  },
+  {
+    "id": "cmsos6oq900pzmx57epj9kkf5",
+    "name": "Lien Waiver Tool V2",
+    "tags": [
+      "Accounting",
+      "Finance",
+      "Tool"
+    ]
+  },
+  {
+    "id": "cmsdgg41d008cmx57fysdrqck",
+    "name": "Map Tool",
+    "tags": [
+      "Land Development",
+      "Construction",
+      "Sales",
+      "Tool",
+      "Map"
+    ]
+  },
+  {
+    "id": "cmsng4x9f00lgmx57f469yfsv",
+    "name": "Nav Notification Tool",
+    "tags": [
+      "Accounting",
+      "All Staff",
+      "Tool",
+      "Reminder"
+    ]
+  },
+  {
+    "id": "cmrc8865l002rn04ozasvkx9y",
+    "name": "Office Orders",
+    "tags": [
+      "Office & Facilities",
+      "All Staff",
+      "Tool"
+    ]
+  },
+  {
+    "id": "plan-intelligence",
+    "name": "Plan Intelligence",
+    "tags": [
+      "Land",
+      "Sales",
+      "Construction",
+      "Tool",
+      "AI",
+      "Reports"
+    ]
+  },
+  {
+    "id": "cmqzm4h9c0001mr4ovct7nmzu",
+    "name": "Sales Dashboard",
+    "tags": [
+      "Sales",
+      "Dashboard",
+      "Reports"
+    ]
+  },
+  {
+    "id": "cmq5ravdn0000qn5fevgdqb27",
+    "name": "Sales Metrics",
+    "tags": [
+      "Sales",
+      "Dashboard",
+      "Reports"
+    ]
+  },
+  {
+    "id": "cmpvskjai0000pa4ogobdvmqu",
+    "name": "Sales Report",
+    "tags": [
+      "Sales",
+      "Dashboard",
+      "Reports"
+    ]
+  },
+  {
+    "id": "cmt3he20j00hjqv57efwxj2k8",
+    "name": "Survey Responses",
+    "tags": [
+      "Customer Service",
+      "Marketing",
+      "Dashboard",
+      "Reports"
+    ]
+  },
+  {
+    "id": "cmsqnmwvp002wth57xc7lzw6q",
+    "name": "Survey Sender",
+    "tags": [
+      "Customer Service",
+      "Marketing",
+      "Tool"
+    ]
+  }
+]

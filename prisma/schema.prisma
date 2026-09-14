@@ -183,6 +183,8 @@ model AppGrant {
 // Managed in the UI under /admin/departments. Used to restrict app access
 // for employees — managers and admins ignore department gates.
 model Department {
+  source      String      @default("custom")
+  externalId  String?     @unique
   id          String      @id @default(cuid())
   name        String      @unique
   description String?

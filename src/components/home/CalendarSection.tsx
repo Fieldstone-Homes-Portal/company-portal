@@ -11,16 +11,28 @@ export default function CalendarSection({ initial }: { initial: MonthData }) {
   const [data, setData] = useState<MonthData>(initial);
   const [loading, setLoading] = useState(false);
   // Computed after mount so server/client initial HTML match (no hydration mismatch).
-  const [today, setToday] = useState<{ y: number; m: number; d: number } | null>(null);
+  const [today, setToday] = useState<{
+    y: number;
+    m: number;
+    d: number;
+  } | null>(null);
   useEffect(() => {
     const n = new Date();
+    // Deliberate post-hydration local date; the server cannot know the browser timezone.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setToday({ y: n.getFullYear(), m: n.getMonth() + 1, d: n.getDate() });
   }, []);
 
   async function go(delta: number) {
     let y = data.year;
     let m = data.month + delta;
-    if (m < 1) { m = 12; y--; } else if (m > 12) { m = 1; y++; }
+    if (m < 1) {
+      m = 12;
+      y--;
+    } else if (m > 12) {
+      m = 1;
+      y++;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/calendar?month=${y}-${pad(m)}`);
@@ -56,13 +68,23 @@ export default function CalendarSection({ initial }: { initial: MonthData }) {
           <h2 className="font-display text-xl font-bold text-fs-espresso">
             {data.monthName} {data.year}
           </h2>
-          {loading && <span className="text-xs text-fs-copper-light">updating…</span>}
+          {loading && (
+            <span className="text-xs text-fs-copper-light">updating…</span>
+          )}
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => go(-1)} aria-label="Previous month" className={navBtn}>
+          <button
+            onClick={() => go(-1)}
+            aria-label="Previous month"
+            className={navBtn}
+          >
             <ChevronLeft size={16} />
           </button>
-          <button onClick={() => go(1)} aria-label="Next month" className={navBtn}>
+          <button
+            onClick={() => go(1)}
+            aria-label="Next month"
+            className={navBtn}
+          >
             <ChevronRight size={16} />
           </button>
         </div>
@@ -71,7 +93,10 @@ export default function CalendarSection({ initial }: { initial: MonthData }) {
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-fs-warm-gray">
         <div className="grid grid-cols-7 border-b border-fs-warm-gray bg-fs-warm-white">
           {WEEKDAYS.map((w) => (
-            <div key={w} className="px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-fs-copper">
+            <div
+              key={w}
+              className="px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-fs-copper"
+            >
               {w}
             </div>
           ))}
@@ -79,9 +104,12 @@ export default function CalendarSection({ initial }: { initial: MonthData }) {
         <div className="grid grid-cols-7">
           {cells.map((d, idx) => {
             const isToday =
-              d !== null && today !== null &&
-              data.year === today.y && data.month === today.m && d === today.d;
-            const evs = d !== null ? byDay.get(d) ?? [] : [];
+              d !== null &&
+              today !== null &&
+              data.year === today.y &&
+              data.month === today.m &&
+              d === today.d;
+            const evs = d !== null ? (byDay.get(d) ?? []) : [];
             return (
               <div
                 key={idx}
@@ -93,7 +121,9 @@ export default function CalendarSection({ initial }: { initial: MonthData }) {
                   <>
                     <div
                       className={`mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                        isToday ? "bg-fs-espresso text-white" : "text-fs-charcoal"
+                        isToday
+                          ? "bg-fs-espresso text-white"
+                          : "text-fs-charcoal"
                       }`}
                     >
                       {d}
@@ -116,7 +146,9 @@ export default function CalendarSection({ initial }: { initial: MonthData }) {
                         </div>
                       ))}
                       {evs.length > 2 && (
-                        <div className="px-1 text-[10px] text-fs-copper-light">+{evs.length - 2} more</div>
+                        <div className="px-1 text-[10px] text-fs-copper-light">
+                          +{evs.length - 2} more
+                        </div>
                       )}
                     </div>
                   </>
@@ -134,12 +166,18 @@ export default function CalendarSection({ initial }: { initial: MonthData }) {
           </p>
           <div className="flex flex-wrap gap-2">
             {data.anniversaries.map((a, i) => (
-              <span key={i} className="rounded-full bg-fs-warm-white px-3 py-1 text-xs text-fs-espresso">
-                <span className="font-semibold">{a.name}</span> · {a.years} yr{a.years === 1 ? "" : "s"}
+              <span
+                key={i}
+                className="rounded-full bg-fs-warm-white px-3 py-1 text-xs text-fs-espresso"
+              >
+                <span className="font-semibold">{a.name}</span> · {a.years} yr
+                {a.years === 1 ? "" : "s"}
               </span>
             ))}
           </div>
-          <p className="mt-2 text-[10px] text-fs-copper-light">Approximate (month-level), from All Staff history.</p>
+          <p className="mt-2 text-[10px] text-fs-copper-light">
+            Approximate (month-level), from All Staff history.
+          </p>
         </div>
       )}
     </section>

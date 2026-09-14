@@ -4,11 +4,7 @@ import { redirect } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import AccessStudio from "./AccessStudio";
 
-// Access Studio — THE management surface for portal apps and access.
-// Drag departments and people onto apps to grant access, click chips to
-// revoke, edit app details on each card, and manage a person's role and
-// departments from their profile. Every change saves immediately (with
-// undo). Departments themselves are created under /admin/departments.
+// Select people and groups to apply immediate software grants.
 export default async function AccessStudioPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -26,7 +22,15 @@ export default async function AccessStudioPage() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
     prisma.department.findMany({
-      select: { id: true, name: true, _count: { select: { users: true } } },
+      select: {
+        id: true,
+        name: true,
+        source: true,
+        externalId: true,
+        description: true,
+        users: { select: { id: true } },
+        _count: { select: { users: true } },
+      },
       orderBy: { name: "asc" },
     }),
     prisma.user.findMany({
@@ -52,7 +56,7 @@ export default async function AccessStudioPage() {
       <PageHeader
         label="Management"
         title="Access Studio"
-        subtitle="Apps, access, and people — drag departments and people onto apps to grant access."
+        subtitle="Select people or groups, choose software, and grant access immediately."
       />
 
       <AccessStudio
@@ -76,7 +80,13 @@ export default async function AccessStudioPage() {
         tags={tags}
         departments={departments.map((d) => ({
           id: d.id,
-          name: d.name,
+          name:
+            d.source === "microsoft"
+              ? d.name.split(" (Microsoft 365")[0]
+              : d.name,
+          source: d.source,
+          description: d.description,
+          userIds: d.users.map((u) => u.id),
           memberCount: d._count.users,
         }))}
         people={users.map((u) => ({

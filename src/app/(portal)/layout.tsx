@@ -25,6 +25,11 @@ export default async function PortalLayout({
         toolbox={toolbox}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
+        {process.env.CORNERSTONE_PREVIEW === "1" && (
+          <div className="bg-fs-copper px-4 py-2 text-center text-sm text-white">
+            Local preview · access changes stay local · email sending disabled
+          </div>
+        )}
         <Header
           user={{
             name: session.user.name,
@@ -33,7 +38,7 @@ export default async function PortalLayout({
             image: session.user.image,
           }}
         />
-        <main className="flex flex-1 flex-col overflow-y-auto bg-fs-warm-white p-6">
+        <main className="flex flex-1 flex-col overflow-y-auto bg-fs-sand p-6">
           {children}
         </main>
       </div>

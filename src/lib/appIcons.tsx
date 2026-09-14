@@ -30,3 +30,15 @@ export const APP_ICON_MAP: Record<string, LucideIcon> = {
 export function appIcon(key: string | null | undefined): LucideIcon {
   return APP_ICON_MAP[key || "tool"] || Wrench;
 }
+
+/** Render a stable wrapper; do not treat a function call as a component factory. */
+export function AppIcon({
+  name,
+  size = 20,
+}: {
+  name?: string | null;
+  size?: number;
+}) {
+  const Icon = APP_ICON_MAP[name || "tool"] || Wrench;
+  return <Icon size={size} />;
+}

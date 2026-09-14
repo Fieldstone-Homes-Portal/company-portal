@@ -1,3 +1,4 @@
+import { directoryDepartments } from "./accessGroups";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -51,11 +52,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Load the user's departments fresh on every session so access
         // checks see the current state without needing to re-login.
         const depts = await prisma.department.findMany({
-          where: { users: { some: { id: user.id } } },
+          where: { source: "custom", users: { some: { id: user.id } } },
           select: { id: true, name: true },
           orderBy: { name: "asc" },
         });
-        session.user.departments = depts;
+        session.user.departments = [
+          ...depts,
+          ...(await directoryDepartments(user.email)),
+        ];
       }
       return session;
     },
@@ -65,7 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (profile as Record<string, string> | undefined)?.email ||
         (profile as Record<string, string> | undefined)?.preferred_username ||
         "";
-      if (!email.endsWith("@fieldstonehomes.com")) {
+      if (!email.toLowerCase().endsWith("@fieldstonehomes.com")) {
         return false;
       }
       return true;

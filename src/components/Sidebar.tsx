@@ -36,6 +36,7 @@ interface SidebarProps {
 // Home sits above the tag navigation; Links is pinned to the bottom of the
 // nav pane (above Management).
 const homeItem = { label: "Home", href: "/home", icon: Home };
+const requestsItem = { label: "Requests", href: "/requests", icon: Inbox };
 const linksItem = { label: "Links", href: "/links", icon: Link2 };
 
 // Management links — ADMIN-only, like everything under /admin.
@@ -44,7 +45,6 @@ const linksItem = { label: "Links", href: "/links", icon: Link2 };
 const managerNav = [
   // Request Center sub-app (Office / Marketing / IT requests) — parked here
   // for the admin-only soft launch; graduates to a PortalApp tile later.
-  { label: "Request Center", href: "/admin/request-center", icon: Inbox },
   { label: "Access Studio", href: "/admin/access-studio", icon: Shield },
   { label: "Departments", href: "/admin/departments", icon: Building2 },
   // Navigation tags for the Toolbox (create/rename/merge/delete).
@@ -76,8 +76,18 @@ export default function Sidebar({ role, footerSlot, toolbox }: SidebarProps) {
       <div className="pointer-events-none absolute inset-0 opacity-[0.04]">
         <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <pattern id="sidebarGrid" width="32" height="32" patternUnits="userSpaceOnUse">
-              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="white" strokeWidth="0.5" />
+            <pattern
+              id="sidebarGrid"
+              width="32"
+              height="32"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 32 0 L 0 0 0 32"
+                fill="none"
+                stroke="white"
+                strokeWidth="0.5"
+              />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#sidebarGrid)" />
@@ -119,7 +129,7 @@ export default function Sidebar({ role, footerSlot, toolbox }: SidebarProps) {
           for admins) stay pinned to the bottom of the pane. */}
       <nav className="relative flex min-h-0 flex-1 flex-col p-3">
         <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-          {[homeItem].map((item) => {
+          {[homeItem, requestsItem].map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -171,43 +181,43 @@ export default function Sidebar({ role, footerSlot, toolbox }: SidebarProps) {
 
           {isAdmin && (
             <>
-            {!collapsed && (
-              <button
-                type="button"
-                onClick={() => setManagementOpen((o) => !o)}
-                className="mt-1 flex w-full items-center justify-between rounded-lg px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-fs-copper transition-colors hover:text-white"
-              >
-                Management
-                <ChevronDown
-                  size={12}
-                  className={`transition-transform ${
-                    managementOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-            )}
-            {collapsed && <div className="my-4 border-t border-white/10" />}
-            {(managementOpen || collapsed) &&
-              managerNav.map((item) => {
-                const active =
-                  pathname === item.href ||
-                  pathname.startsWith(item.href + "/");
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                      active
-                        ? "bg-white/15 text-white shadow-sm"
-                        : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
-                    } ${collapsed ? "justify-center" : ""}`}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <item.icon size={18} />
-                    {!collapsed && item.label}
-                  </Link>
-                );
-              })}
+              {!collapsed && (
+                <button
+                  type="button"
+                  onClick={() => setManagementOpen((o) => !o)}
+                  className="mt-1 flex w-full items-center justify-between rounded-lg px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-fs-copper transition-colors hover:text-white"
+                >
+                  Management
+                  <ChevronDown
+                    size={12}
+                    className={`transition-transform ${
+                      managementOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+              )}
+              {collapsed && <div className="my-4 border-t border-white/10" />}
+              {(managementOpen || collapsed) &&
+                managerNav.map((item) => {
+                  const active =
+                    pathname === item.href ||
+                    pathname.startsWith(item.href + "/");
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                        active
+                          ? "bg-white/15 text-white shadow-sm"
+                          : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
+                      } ${collapsed ? "justify-center" : ""}`}
+                      title={collapsed ? item.label : undefined}
+                    >
+                      <item.icon size={18} />
+                      {!collapsed && item.label}
+                    </Link>
+                  );
+                })}
             </>
           )}
         </div>

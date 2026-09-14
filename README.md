@@ -34,3 +34,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Access and Requests (local redesign)
+
+Access Studio uses searchable people/group/software selections and immediate grant/remove actions.
+The group model extends Department with `source` and `externalId`; existing departments remain custom
+groups. Microsoft 365 group metadata is read through Graph, and current membership is checked on each
+session. Custom groups are edited in Access Studio. Graph pagination is restricted to Microsoft's origin.
+
+`/requests` is available to all authenticated employees; Request Center enforces requester privacy and
+category-manager permissions. Set `REQUEST_CENTER_URL` and the existing portal identity signing variables.
+`CORNERSTONE_PREVIEW=1` labels a local preview and must be unset in production.
+
+Required migration: `20260914193000_access_groups`. The existing `GRAPH_*` app credentials need read
+permissions for group listing and user transitive memberships. No Microsoft directory writes are used.

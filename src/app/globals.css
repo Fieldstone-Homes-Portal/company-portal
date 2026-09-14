@@ -1,20 +1,27 @@
 @import "tailwindcss";
+@font-face { font-family: 'Cormorant Garamond'; src: url('/fonts/CormorantGaramond-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url('/fonts/CormorantGaramond-600.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url('/fonts/CormorantGaramond-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('/fonts/Montserrat-300.woff2') format('woff2'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('/fonts/Montserrat-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('/fonts/Montserrat-500.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('/fonts/Montserrat-600.woff2') format('woff2'); font-weight: 600; font-display: swap; }
 
 :root {
-  --fs-espresso: #26221F;
-  --fs-copper: #A77243;
-  --fs-copper-light: #b8926f;
-  --fs-sand: #DCD2C7;
-  --fs-warm-white: #f5f3f0;
-  --fs-warm-gray: #CBCBC5;
-  --fs-sage: #B1B0A9;
+  --fs-espresso: #26221f;
+  --fs-copper: #a77243;
+  --fs-copper-light: #c08e5e;
+  --fs-sand: #dcd2c7;
+  --fs-warm-white: #f7f5f2;
+  --fs-warm-gray: #cbcbc5;
+  --fs-sage: #b1b0a9;
   --fs-charcoal: #323232;
-  --fs-cool-gray: #ecedf0;
+  --fs-cool-gray: #f7f5f2;
   --fs-white: #ffffff;
   --fs-black: #000000;
 
-  --background: var(--fs-warm-white);
-  --foreground: var(--fs-espresso);
+  --background: var(--fs-sand);
+  --foreground: var(--fs-charcoal);
   --surface: var(--fs-white);
   --surface-hover: var(--fs-warm-gray);
   --border: var(--fs-warm-gray);
@@ -69,4 +76,22 @@ body {
     background: var(--fs-copper);
     color: var(--fs-white);
   }
+}
+
+/* Cornerstone shared palette — aligned with IT Management. */
+:root {
+  --cornerstone-linen: #dcd2c7;
+  --cornerstone-gold: #a77243;
+  --cornerstone-gold-soft: #c08e5e;
+  --cornerstone-stone: #b1b0a9;
+  --cornerstone-charcoal: #323232;
+  --cornerstone-sage: #cbcbc5;
+  --cornerstone-obsidian: #26221f;
+  --cornerstone-white: #ffffff;
+  --cornerstone-paper: #f7f5f2;
+}
+@media screen {
+  body { background-color: var(--cornerstone-linen); color: var(--cornerstone-charcoal); }
+  :focus-visible { outline: 2px solid var(--cornerstone-gold); outline-offset: 2px; }
+  input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color: var(--cornerstone-gold); }
 }

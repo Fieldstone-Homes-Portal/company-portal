@@ -29,7 +29,9 @@ export async function PUT(req: NextRequest, context: Context) {
   const userIds: string[] = [
     ...new Set(
       Array.isArray(body.userIds)
-        ? (body.userIds.filter((u: unknown) => typeof u === "string") as string[])
+        ? (body.userIds.filter(
+            (u: unknown) => typeof u === "string",
+          ) as string[])
         : [],
     ),
   ];
@@ -73,6 +75,61 @@ export async function PUT(req: NextRequest, context: Context) {
     });
   } catch {
     // Unknown app id, or a dept/user id that no longer exists.
-    return NextResponse.json({ error: "Invalid app, department, or user" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid app, department, or user" },
+      { status: 400 },
+    );
+  }
+}
+
+/** Add/remove selected grants atomically; never overwrite unrelated concurrent changes. */
+export async function PATCH(req: NextRequest, context: Context) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  try {
+    const { id } = await context.params;
+    const body = await req.json();
+    if (
+      !["grant", "remove"].includes(body.action) ||
+      !Array.isArray(body.userIds) ||
+      !Array.isArray(body.deptIds) ||
+      [...body.userIds, ...body.deptIds].some((v) => typeof v !== "string") ||
+      body.userIds.length + body.deptIds.length > 1000
+    )
+      return NextResponse.json({ error: "Invalid selection" }, { status: 400 });
+    const userIds = [...new Set(body.userIds as string[])];
+    const deptIds = [...new Set(body.deptIds as string[])];
+    const grant = body.action === "grant";
+    await prisma.$transaction(async (tx) => {
+      await tx.portalApp.update({
+        where: { id },
+        data: {
+          ...(body.allStaff === true ? { allStaff: grant } : {}),
+          departments: grant
+            ? { connect: deptIds.map((id) => ({ id })) }
+            : { disconnect: deptIds.map((id) => ({ id })) },
+        },
+      });
+      if (grant)
+        await tx.appGrant.createMany({
+          data: userIds.map((userId) => ({
+            appId: id,
+            userId,
+            grantedBy: session.user.email,
+          })),
+          skipDuplicates: true,
+        });
+      else
+        await tx.appGrant.deleteMany({
+          where: { appId: id, userId: { in: userIds } },
+        });
+    });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json(
+      { error: "Unable to save access" },
+      { status: 400 },
+    );
   }
 }

@@ -6,7 +6,11 @@ import { Maximize2, Minimize2 } from "lucide-react";
 // Slimmed-down cousin of apps/[id]/AppEmbed for the Management-section soft
 // launch: same chrome and fullscreen toggle, but no PortalApp row backs this
 // embed, so there is no open-tracking or usage heartbeat.
-export default function RequestCenterEmbed({ iframeSrc }: { iframeSrc: string }) {
+export default function RequestCenterEmbed({
+  iframeSrc,
+}: {
+  iframeSrc: string;
+}) {
   const [fullscreen, setFullscreen] = useState(false);
 
   const header = (
@@ -15,9 +19,6 @@ export default function RequestCenterEmbed({ iframeSrc }: { iframeSrc: string })
         <h1 className="font-display text-sm font-bold text-fs-espresso">
           Request Center
         </h1>
-        <span className="rounded-full bg-fs-warm-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fs-copper">
-          Admin preview
-        </span>
       </div>
       <button
         onClick={() => setFullscreen(!fullscreen)}
