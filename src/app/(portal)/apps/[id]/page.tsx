@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canAccessApp, whyBlocked } from "@/lib/roles";
+import { canAccessApp, whyBlocked, canViewArchivedApps } from "@/lib/roles";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Lock } from "lucide-react";
@@ -11,6 +11,10 @@ const PORTAL_ACCESS_TOKEN = process.env.PORTAL_ACCESS_TOKEN || "";
 // Shared secret for signing the forwarded login (must match the sub-app). When
 // unset, identity forwarding is off and behavior is unchanged.
 const IDENTITY_SIGNING_SECRET = process.env.IDENTITY_SIGNING_SECRET || "";
+
+function signedTimestamp() {
+  return String(Math.floor(Date.now() / 1000));
+}
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -28,7 +32,7 @@ export default async function AppPage({ params }: Props) {
       grants: { select: { userId: true } },
     },
   });
-  if (!app || !app.isActive) notFound();
+  if (!app || (!app.isActive && !canViewArchivedApps(session.user))) notFound();
 
   // Full access-policy check (allStaff / departments / individual grants).
   if (!canAccessApp(session.user, app)) {
@@ -75,10 +79,12 @@ export default async function AppPage({ params }: Props) {
   if (IDENTITY_SIGNING_SECRET && session.user.email) {
     const email = session.user.email.toLowerCase();
     const name = session.user.name ?? "";
+    const ts = app.id === "facilities-management" ? signedTimestamp() : "";
     const sig = createHmac("sha256", IDENTITY_SIGNING_SECRET)
-      .update(`${email}|${name}`)
+      .update(ts ? `${email}|${name}|${ts}` : `${email}|${name}`)
       .digest("hex");
     const params = new URLSearchParams({ fsh_user: email, fsh_name: name, fsh_sig: sig });
+    if (ts) params.set("fsh_ts", ts);
     iframeSrc += `${iframeSrc.includes("?") ? "&" : "?"}${params.toString()}`;
   }
 

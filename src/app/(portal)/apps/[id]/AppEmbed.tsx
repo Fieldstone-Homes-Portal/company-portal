@@ -31,7 +31,7 @@ export default function AppEmbed({ name, iframeSrc, appId, stage = "DEPLOYED" }:
 
   if (fullscreen) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-white">
+      <div className="fixed inset-x-0 bottom-0 top-16 z-30 flex flex-col bg-white">
         <div className="flex items-center justify-between border-b border-fs-warm-gray bg-white px-4 py-2">
           <div className="flex items-center gap-2">
             <h1 className="font-display text-sm font-bold text-fs-espresso">

@@ -3,7 +3,11 @@
 import { LogOut, Shield } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
+import GlobalSearch from "./GlobalSearch";
+import type { ToolboxApp } from "@/lib/toolboxData";
+
 interface HeaderProps {
+  apps: ToolboxApp[];
   user: {
     name: string | null;
     email: string;
@@ -12,7 +16,7 @@ interface HeaderProps {
   };
 }
 
-export default function Header({ user }: HeaderProps) {
+export default function Header({ user, apps }: HeaderProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -34,14 +38,14 @@ export default function Header({ user }: HeaderProps) {
         : "Employee";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-fs-warm-gray bg-white px-6">
-      <div />
-      <div className="relative" ref={ref}>
+    <header className="relative z-40 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-fs-warm-gray bg-white px-6">
+      <GlobalSearch apps={apps} />
+      <div className="relative shrink-0" ref={ref}>
         <button
           onClick={() => setOpen(!open)}
           className="flex items-center gap-3 rounded-full px-3 py-1.5 transition-colors hover:bg-fs-warm-gray"
         >
-          <div className="text-right">
+          <div className="hidden text-right sm:block">
             <p className="text-sm font-medium text-fs-espresso">
               {user.name || user.email.split("@")[0]}
             </p>

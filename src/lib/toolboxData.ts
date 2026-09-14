@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { canAccessApp } from "@/lib/roles";
+import { canAccessApp, canViewArchivedApps } from "@/lib/roles";
 import type { Role } from "@prisma/client";
 import {
   COMPANY_HITS_CAP,
@@ -21,6 +21,7 @@ export interface ToolboxApp {
   name: string;
   description: string | null;
   icon: string | null;
+  isActive?: boolean;
   url: string;
   openIn: string;
   stage: string;
@@ -50,6 +51,7 @@ export interface ToolboxData {
 type SessionUser = {
   id: string;
   role: Role;
+  email?: string | null;
   departments?: { id: string; name: string }[];
 };
 
@@ -95,7 +97,7 @@ export async function getToolboxData(user: SessionUser): Promise<ToolboxData> {
     // can access — tools and dashboards alike (the "tool"/"dashboard" type
     // tags take over the old section split; /dashboards still exists).
     prisma.portalApp.findMany({
-      where: { isActive: true },
+      where: canViewArchivedApps(user) ? {} : { isActive: true },
       include: {
         departments: { select: { id: true, name: true } },
         grants: { select: { userId: true } },
@@ -154,6 +156,7 @@ export async function getToolboxData(user: SessionUser): Promise<ToolboxData> {
       name: a.name,
       description: a.description,
       icon: a.icon,
+      isActive: a.isActive,
       url: a.url,
       openIn: a.openIn,
       stage: a.stage,

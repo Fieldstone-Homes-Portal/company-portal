@@ -95,3 +95,8 @@ export function whyBlocked(
     return `This app is restricted to: ${appDepts.join(", ")}.`;
   return "You don't have access to this app.";
 }
+
+/** Tim can discover and open retained inactive apps without reactivating them for staff. */
+export function canViewArchivedApps(user: { role: string; email?: string | null }): boolean {
+  return user.role === "ADMIN" && user.email?.trim().toLowerCase() === "tim@fieldstonehomes.com";
+}

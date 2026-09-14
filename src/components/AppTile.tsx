@@ -22,6 +22,7 @@ interface AppTileProps {
   // True for apps registered within the last NEW_APP_WINDOW_DAYS —
   // shows a copper "New" badge next to the category chip.
   isNew?: boolean;
+  isActive?: boolean;
   // Publisher tags on the app. When provided (the Toolbox), tag chips
   // replace the legacy category chip and are clickable filters. Pages that
   // don't pass tags (e.g. /dashboards) keep the category chip unchanged.
@@ -47,6 +48,7 @@ export default function AppTile({
   stage = "DEPLOYED",
   departments = [],
   isNew = false,
+  isActive = true,
   tags,
   onTagClick,
   selectedTags = [],
@@ -73,6 +75,7 @@ export default function AppTile({
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-1.5">
+            {!isActive && <span className="rounded-full bg-fs-warm-gray px-2 py-1 text-xs text-fs-espresso">Archived · Tim access</span>}
             {isNew && (
               <span className="rounded-full bg-fs-copper px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
                 New

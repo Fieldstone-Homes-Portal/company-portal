@@ -59,3 +59,9 @@ so old iframe links cannot admit employees before launch.
 ### Access Studio administrators
 
 Access Studio and its access-changing APIs are restricted to Tim (`tim@fieldstonehomes.com`) and Skyler (`skyler@fieldstonehomes.com`), each with the ADMIN role. The same restriction protects app policies, user roles, and access-group membership edits. Other administrators do not inherit these privileges. The allowlist lives in `src/lib/accessStudioPolicy.ts`.
+
+### Global search and retained apps
+
+The shared header provides instant access-scoped app search with an overlay, Cmd/Ctrl+K, arrow keys, Enter, Escape, and click-away dismissal. It does not debounce into the URL or depend on selected Toolbox tags. Historical `?q=` links still filter the Toolbox. Expanded embedded apps retain the header. Tim, while ADMIN, can discover/open inactive registered apps; other users keep the active-only catalog.
+
+Run `node scripts/register-facilities-and-retained-apps.mjs` once after deploying the facilities routes. This registers Facilities Management for Tonya, Tim, and Skyler and adds missing retained app entries for Tim without enabling them for staff. No announcement is generated.

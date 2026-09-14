@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Boxes, Search, X } from "lucide-react";
+import { Boxes, X } from "lucide-react";
 import AppTile from "@/components/AppTile";
 import type { ToolboxApp } from "@/lib/toolboxData";
 import {
@@ -38,9 +38,6 @@ interface ToolboxExplorerProps {
   companyHitIds: string[];
 }
 
-const searchInputClass =
-  "w-full rounded-xl border border-fs-warm-gray bg-white py-2.5 pl-10 pr-10 text-sm text-fs-espresso placeholder:text-fs-copper-light focus:border-fs-copper focus:outline-none focus:ring-1 focus:ring-fs-copper";
-
 export default function ToolboxExplorer({
   apps,
   favoriteIds,
@@ -58,24 +55,7 @@ export default function ToolboxExplorer({
   );
   const urlQuery = searchParams.get("q") || "";
 
-  // The input is local state for instant keystrokes, debounced into the URL
-  // so the sidebar counts follow the search too.
-  const [query, setQuery] = useState(urlQuery);
-  // Back/forward (or a navigation that drops ?q=) re-syncs the box —
-  // React's adjust-state-during-render pattern, no effect needed.
-  const [lastUrlQuery, setLastUrlQuery] = useState(urlQuery);
-  if (urlQuery !== lastUrlQuery) {
-    setLastUrlQuery(urlQuery);
-    setQuery(urlQuery);
-  }
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function onQueryChange(next: string) {
-    setQuery(next);
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => {
-      router.replace(toolboxHref(selected, next), { scroll: false });
-    }, 250);
-  }
+  const query = urlQuery;
 
   // Favorites are optimistic; router.refresh() re-syncs the sidebar counts.
   const [favorites, setFavorites] = useState<Set<string>>(
@@ -114,7 +94,6 @@ export default function ToolboxExplorer({
   }
 
   function clearFilters() {
-    setQuery("");
     router.push("/dashboard", { scroll: false });
   }
 
@@ -173,30 +152,6 @@ export default function ToolboxExplorer({
         )}
       </div>
 
-      <div className="relative mb-6">
-        <Search
-          size={16}
-          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-fs-copper-light"
-        />
-        <input
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          className={searchInputClass}
-          placeholder="Search tools — try 'sales map'"
-          aria-label="Search tools"
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => onQueryChange("")}
-            aria-label="Clear search"
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-fs-copper hover:bg-fs-warm-gray"
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
-
       {results.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center shadow-sm ring-1 ring-fs-warm-gray">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-fs-warm-white">
@@ -239,6 +194,7 @@ export default function ToolboxExplorer({
                 stage={a.stage}
                 departments={a.departments}
                 isNew={a.isNew}
+                isActive={a.isActive}
                 tags={a.tags}
                 onTagClick={toggleTag}
                 selectedTags={selected}

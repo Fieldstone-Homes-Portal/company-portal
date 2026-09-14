@@ -33,6 +33,7 @@ export default async function PortalLayout({
           </div>
         )}
         <Header
+          apps={toolbox.apps}
           user={{
             name: session.user.name,
             email: session.user.email,

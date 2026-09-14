@@ -41,7 +41,7 @@ export default function RequestCenterEmbed({
 
   if (fullscreen) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-white">
+      <div className="fixed inset-x-0 bottom-0 top-16 z-30 flex flex-col bg-white">
         {header}
         {frame}
       </div>
