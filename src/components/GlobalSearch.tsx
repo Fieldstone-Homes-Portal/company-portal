@@ -66,7 +66,9 @@ export default function GlobalSearch({ apps }: { apps: ToolboxApp[] }) {
         className="absolute right-3 top-2.5 text-fs-copper"><X size={18}/></button>
         : <span className="pointer-events-none absolute right-3 top-3 text-xs text-fs-copper-light">⌘ K</span>}
       {open && <button tabIndex={-1} aria-label="Close app search" onClick={() => setOpen(false)} className="fixed inset-x-0 bottom-0 top-16 -z-10 bg-black/10" />}
-      {open && <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-fs-warm-gray bg-white shadow-2xl">
+      {/* Keep focus in the input while pressing a result: Safari doesn't focus links on
+          click, so the blur would otherwise close the list before the click lands. */}
+      {open && <div onMouseDown={(e) => e.preventDefault()} className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-fs-warm-gray bg-white shadow-2xl">
         <div className="border-b border-fs-warm-gray px-4 py-3 text-xs text-fs-copper" role="status">
           {query.trim() ? `${results.length} matching apps` : "Your apps · type to search names, descriptions, and tags"}
         </div>
