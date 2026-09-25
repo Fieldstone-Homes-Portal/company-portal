@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { createHmac } from "crypto";
+import { canUseRequestCenter } from "@/lib/requestCenterAccess";
 import RequestCenterEmbed from "./RequestCenterEmbed";
 
 function timestamp() {
@@ -9,7 +10,7 @@ function timestamp() {
 
 const PORTAL_ACCESS_TOKEN = process.env.PORTAL_ACCESS_TOKEN || "";
 const IDENTITY_SIGNING_SECRET = process.env.IDENTITY_SIGNING_SECRET || "";
-// Admin preview until the employee launch.
+// Limited launch: admins + the REQUEST_CENTER_USERS allowlist.
 const REQUEST_CENTER_URL =
   process.env.REQUEST_CENTER_URL ||
   "https://request-center-production.up.railway.app";
@@ -17,7 +18,7 @@ const REQUEST_CENTER_URL =
 export default async function RequestCenterPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (session.user.role !== "ADMIN") redirect("/home");
+  if (!canUseRequestCenter(session.user)) redirect("/home");
 
   // Same iframe wiring as /apps/[id]: portal gate token + HMAC-signed identity
   // so the sub-app knows who is acting without cookies.

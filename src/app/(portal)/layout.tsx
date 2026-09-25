@@ -1,4 +1,5 @@
 import { canManageAccess } from "@/lib/accessStudioPolicy";
+import { canUseRequestCenter } from "@/lib/requestCenterAccess";
 import { auth } from "@/lib/auth";
 import { getToolboxData } from "@/lib/toolboxData";
 import { redirect } from "next/navigation";
@@ -23,6 +24,7 @@ export default async function PortalLayout({
       <Sidebar
         role={session.user.role}
         canManageAccess={canManageAccess(session.user)}
+        showRequestCenter={canUseRequestCenter(session.user)}
         footerSlot={<MortgageRateTag />}
         toolbox={toolbox}
       />

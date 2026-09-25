@@ -24,6 +24,9 @@ import type { ToolboxData } from "@/lib/toolboxData";
 interface SidebarProps {
   role: string;
   canManageAccess?: boolean;
+  // Limited-launch Request Center: admins + allowlisted users get the
+  // Requests entry below Links (computed server-side in the portal layout).
+  showRequestCenter?: boolean;
   // Async server-rendered slot composed in by the portal layout. Lives
   // above the CORNERSTONE footer tag. Kept generic so we can drop in
   // additional live data points later without re-plumbing the sidebar.
@@ -42,9 +45,12 @@ const linksItem = { label: "Links", href: "/links", icon: Link2 };
 // Management links — ADMIN-only, like everything under /admin.
 // Access Studio replaced the old Manage Apps / Manage Users / App Access
 // pages: apps, access grants, and people are all managed there now.
+// Requests sits below Links for admins + the REQUEST_CENTER_USERS allowlist
+// (see lib/requestCenterAccess) during the limited launch.
+const requestsItem = { label: "Requests", href: "/request-center", icon: Inbox };
+
 const managerNav = [
   { label: "Access Studio", href: "/admin/access-studio", icon: Shield },
-  { label: "Requests", href: "/admin/request-center", icon: Inbox },
   { label: "Departments", href: "/admin/departments", icon: Building2 },
   // Navigation tags for the Toolbox (create/rename/merge/delete).
   { label: "Tags", href: "/admin/tags", icon: Tags },
@@ -54,7 +60,7 @@ const managerNav = [
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
-export default function Sidebar({ role, footerSlot, toolbox, canManageAccess = false }: SidebarProps) {
+export default function Sidebar({ role, footerSlot, toolbox, canManageAccess = false, showRequestCenter = false }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   // Management is collapsed by default so the tag navigation gets the room;
@@ -158,25 +164,28 @@ export default function Sidebar({ role, footerSlot, toolbox, canManageAccess = f
         </div>
 
         <div className="mt-2 space-y-1 border-t border-white/10 pt-2">
-          {(() => {
-            const active =
-              pathname === linksItem.href ||
-              pathname.startsWith(linksItem.href + "/");
-            return (
-              <Link
-                href={linksItem.href}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-white/15 text-white shadow-sm"
-                    : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
-                } ${collapsed ? "justify-center" : ""}`}
-                title={collapsed ? linksItem.label : undefined}
-              >
-                <linksItem.icon size={18} />
-                {!collapsed && linksItem.label}
-              </Link>
-            );
-          })()}
+          {[linksItem, ...(showRequestCenter ? [requestsItem] : [])].map(
+            (item) => {
+              const active =
+                pathname === item.href ||
+                pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-white/15 text-white shadow-sm"
+                      : "text-fs-sand/70 hover:bg-white/10 hover:text-white"
+                  } ${collapsed ? "justify-center" : ""}`}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <item.icon size={18} />
+                  {!collapsed && item.label}
+                </Link>
+              );
+            },
+          )}
 
           {isAdmin && (
             <>
